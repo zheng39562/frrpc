@@ -30,6 +30,9 @@ void NetLink::PushMessageToQueue(const BinaryMemoryPtr& binary){
 	message_queue.push(binary);
 }
 
+Send(Socket socket, const BinaryMemory& binary)=0;
+SendGroup(const vector<Socket>& socket, const BinaryMemory& binary)=0;
+
 }// namespace network{
 }// namespace frrpc{
 

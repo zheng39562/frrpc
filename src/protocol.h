@@ -23,7 +23,6 @@ class RpcMessage{
 		~RpcMessage();
 	public:
 		bool IsCompleted();
-		//! \brief
 		void Clear();
 	public:
 		Scoket socket;

@@ -32,21 +32,19 @@ NetServer& NetServer::operator=(const NetServer &ref){
 NetServer::~NetServer(){ 
 }
 
-bool NetServer::start(const string &ip, unsigned int port){
-	if(server_->Start(ip.c_str(), port)){
-		TCP_DEBUG_I("启动端口监听 [" << ip << ":" << port << "]");
-		return FrTcpLinker::start(ip, port);
-	}
-	else{
-		TCP_DEBUG_I("监听失败");
+bool NetServer::Start(const string &ip, Port port){
+	if(!server_->Start(ip.c_str(), port)){
+		DEBUG_I("监听失败");
 		return false;
 	}
+
+	DEBUG_I("启动端口监听 [" << ip << ":" << port << "]");
 	return true;
 }
 
-bool NetServer::stop(){
+bool NetServer::Stop(){
 	if(server_->Stop()){
-		TCP_DEBUG_I("停止server.");
+		DEBUG_I("停止server.");
 		return FrTcpLinker::stop();
 	}
 	return false;
@@ -54,10 +52,10 @@ bool NetServer::stop(){
 
 bool NetServer::Disconnect(Socket socket){
 	if(int(socket) < 0){
-		TCP_DEBUG_E("错误的socket uint值为[" << socket << "] int值为[" << (int)socket << "]");
+		DEBUG_E("错误的socket uint值为[" << socket << "] int值为[" << (int)socket << "]");
 		return false;
 	}
-	TCP_DEBUG_I("服务端主动断开 socket[" << socket << "]连接");
+	DEBUG_I("服务端主动断开 socket[" << socket << "]连接");
 	return server_->Disconnect(socket);
 }
 
@@ -80,18 +78,18 @@ bool NetServer::Send(Socket socket, const BinaryMemory &binary){
 					offset += max_packet_size_;
 				}
 				else{
-					TCP_DEBUG_E("发送包失败。打包之前的长度" << binary.size() << "包长度为" << binary.size() << " 数据包头的命令号为 [" << *(short*)binary.buffer() << "]");
+					DEBUG_E("发送包失败。打包之前的长度" << binary.size() << "包长度为" << binary.size() << " 数据包头的命令号为 [" << *(short*)binary.buffer() << "]");
 					return false;
 				}
 			}
 		}
 		else{
-			TCP_DEBUG_E("发送包头失败(size is "<< binary.size() << "),请检查socket[" << socket << "]链接是否已经断开.");
+			DEBUG_E("发送包头失败(size is "<< binary.size() << "),请检查socket[" << socket << "]链接是否已经断开.");
 			return false;
 		}
 	}
 	else{
-		TCP_DEBUG_I("丢弃包,包长度[" << binary.size() << "].");
+		DEBUG_I("丢弃包,包长度[" << binary.size() << "].");
 		return false;
 	}
 	return true;
@@ -101,7 +99,7 @@ bool NetServer::SendGroup(const vector<Socket> &sockets, const BinaryMemory &bin
 	bool bRet(true);
 	for(vector<Socket>::const_iterator citer = sockets.begin(); citer != sockets.end(); ++citer){
 		if(!NetServer::Send(*citer, binary)){
-			TCP_DEBUG_W("向[" << *citer << "]发送消息失败。请检查连接是否可用。");
+			DEBUG_W("向[" << *citer << "]发送消息失败。请检查连接是否可用。");
 			bRet = false;
 		}
 	}
@@ -129,7 +127,7 @@ EnHandleResult NetServer::OnPrepareListen(ITcpServer* pSender, SOCKET soListen){
 	unsigned short port;
 			
 	pSender->GetListenAddress(sAddress, iAddressLen, port);
-	TCP_DEBUG_I("开始监听端口 [" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
+	DEBUG_I("开始监听端口 [" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
 	return HR_OK;
 }
 
@@ -139,7 +137,7 @@ EnHandleResult NetServer::OnAccept(ITcpServer* pSender, Socket socket, SOCKET so
 	unsigned short port;
 
 	pSender->GetRemoteAddress(socket, sAddress, iAddressLen, port);
-	TCP_DEBUG_I("接收客户端连接请求.[" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
+	DEBUG_I("接收客户端连接请求.[" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
 
 	OnConnect(socket);
 	return HR_OK;
@@ -160,7 +158,7 @@ EnHandleResult NetServer::OnReceive(ITcpServer* pSender, Socket socket, int iLen
 				int iAddressLen = sizeof(sAddress) / sizeof(char);
 				unsigned short port;
 				pSender->GetRemoteAddress(socket, sAddress, iAddressLen, port);
-				TCP_DEBUG_E("收到的包尺寸过大，自动断开连接。连接 ip[" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
+				DEBUG_E("收到的包尺寸过大，自动断开连接。连接 ip[" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
 				Disconnect(socket);
 				return HR_ERROR;
 			}
@@ -196,13 +194,13 @@ EnHandleResult NetServer::OnClose(ITcpServer* pSender, Socket socket, EnSocketOp
 	unsigned short port;
 
 	pSender->GetRemoteAddress(socket, sAddress, iAddressLen, port);
-	TCP_DEBUG_I("服务端[" << string(sAddress, iAddressLen - 1) << ":" << port << "]连接断开 HPScoket errorCode [" << iErrorCode << "]");
+	DEBUG_I("服务端[" << string(sAddress, iAddressLen - 1) << ":" << port << "]连接断开 HPScoket errorCode [" << iErrorCode << "]");
 	OnDisconnect(socket);
 	return HR_OK;
 }
 
 EnHandleResult NetServer::OnShutdown(ITcpServer* pSender){
-	TCP_DEBUG_I("连接关闭");
+	DEBUG_I("连接关闭");
 	return HR_OK;
 }
 

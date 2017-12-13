@@ -8,6 +8,9 @@
 **********************************************************/
 #include "server.h"
 
+#include "net_client.h"
+#include "net_server.h"
+
 using namespace std;
 using namespace google::protobuf;
 
@@ -31,22 +34,37 @@ Server::~Server(){
 	Stop();
 }
 
-bool Server::AddService(::google::protobuf::Service* service_){
+bool Server::AddService(::google::protobuf::Service* service_){ // {{{2
 	string service_name = service_->GetDescriptor()->name();
 	if(name_2service_.find(service_name) == name_2service_.end()){
 		name_2service_.insert(make_pair(service_name, service));
 		return true;
 	}
 	return false;
-}
+} // }}}2
 
-Server::Start(const string& ip, Port port){
-	Init(option_);
+bool Server::Start(const string& ip, Port port){ // {{{2
+	if(!Init(option_)){
+		DEBUG_E("Call Init is Failed.");
+		return false;
+	}
+
+	if(!net_link->Start(ip, port)){
+		DEBUG_E("Fail to start linker.");
+	}
 
 	return true;
-}
+} // }}}2
 
-void Server::Init(ServerOption& option){  //{{{1
+bool Server::Init(ServerOption& option){  //{{{2
+	if(net_link_ != NULL){ delete net_link; net_link = NULL; }
+
+	net_link_ = CreateNetLink(option_.link_type);
+	if(net_link_ == NULL){
+		DEBUG_E("Can not carete net_link.");
+		return false;
+	}
+
 	for(int index = 0; index < option.work_thread_num; ++index){
 		work_threads_.push_back(thread(
 			[&](){
@@ -71,9 +89,25 @@ void Server::Init(ServerOption& option){  //{{{1
 			}
 		));
 	}
-}//}}}1
+}//}}}2
 
-void Server::Stop(){
+NetLink* Server::CreateNetLink(eLinkType link_type){ // {{{2
+	switch(link_type){
+		case eLinkType_Server:
+			return new NetServer();
+		case eLinkType_Gate:
+			return new NetClient();
+		case eLinkType_MQ:
+			DEBUG_E("MQ type does not defination.");
+			return NULL;
+		default:
+			DEBUG_W("Receive type does not include [Listen] or [Gate].Check your option. receive_type [" << receive_type << "]");
+			return NULL;
+	}
+	return NULL;
+} // }}}2
+
+void Server::Stop(){ // {{{2
 	if(net_link != NULL){
 		delete net_link; net_link = NULL;
 	}
@@ -81,9 +115,9 @@ void Server::Stop(){
 	for(auto& thread_item : work_threads_){
 		thread_item.join();
 	}
-}
+} //}}}2
 
-const ::google::protobuf::Message* Server::CreateRequest(::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size){
+const ::google::protobuf::Message* Server::CreateRequest(::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size){ // {{{2
 	if(method_descriptor != NULL && buffer != NULL && size > 0){
 		Message* request = message_factory_.GetPrototype(method_descriptor->input_type());
 		if(request != NULL){
@@ -95,24 +129,24 @@ const ::google::protobuf::Message* Server::CreateRequest(::google::protobuf::Met
 		return request;
 	}
 	return NULL;
-}
+}///}}}2
 
-::google::protobuf::Message* Server::CreateResponse(::google::protobuf::MethodDescriptor* method_descriptor){
+::google::protobuf::Message* Server::CreateResponse(::google::protobuf::MethodDescriptor* method_descriptor){ // {{{2
 	if(method_descriptor != NULL){
 		return message_factory_.GetPrototype(method_descriptor->output_type());
 	}
 	return NULL;
-}
+} // }}}2
 
-const ::google::protobuf::Service* Server::GetServiceFromName(const std::string& service_name){
+const ::google::protobuf::Service* Server::GetServiceFromName(const std::string& service_name){ // {{{2
 	auto name_2service_iter = name_2service_.find(service_name);
 	if(name_2service_iter != name_2service_.end()){
 		return name_2service_iter->second;
 	}
 	return NULL;
-}
+} // }}}2
 
-bool Server::ParseBinary(const BinaryMemory& binary, RpcMessage rpc_message, ::google::protobuf::Service* cur_service){
+bool Server::ParseBinary(const BinaryMemory& binary, RpcMessage rpc_message, ::google::protobuf::Service* cur_service){ // {{{2
 	rpc_message.Clear();
 
 	rpc_message.socket = *(Socket*)binary.buffer();
@@ -147,7 +181,7 @@ bool Server::ParseBinary(const BinaryMemory& binary, RpcMessage rpc_message, ::g
 	rpc_message.response = CreateResponse(rpc_message.method_descriptor);
 
 	return rpc_message.IsCompleted();
-}
+} // }}}2
 
 } // namespace frrpc{
 

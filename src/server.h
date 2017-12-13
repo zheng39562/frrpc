@@ -20,17 +20,24 @@
 
 namespace frrpc{
 
+enum eLinkType{
+	eLinkType_Server = 0,
+	eLinkType_Gate,
+	eLinkType_MQ,
+	eLinkType_End
+}
+
 class ServerOption{
 	public:
-		ServerOption();
+		// 默认为单线和网关模式.
+		ServerOption():work_thread_num(1), receive_type(eLinkType_Gate) { ; }
 		~ServerOption()=default;
 	public:
 		uint32_t work_thread_num;
+		eLinkType link_type;
 };
 
 /// Server {{{1
-//! \brief	
-//! \note	
 class Server{
 	public:
 		friend bool frrpc::RunUntilStop();
@@ -39,29 +46,22 @@ class Server{
 		Server(ServerOption& option);
 		~Server();
 	public:
-		//! \brief	
 		bool AddService(::google::protobuf::Service* service_);
-		//! \brief	
 		bool Start(const string& ip, Port port);
 	private:
 		/// 初始化函数{{{2
-		//! \brief	
-		void Init(ServerOption& option);
+		bool Init(ServerOption& option);
+		NetLink* CreateNetLink(eLinkType link_type);
 		/// }}}2
 		
 		/// 操作函数{{{2
-		//! \brief	
 		void Stop();
 		/// }}}2
 		
 		/// 二进制消息解析函数集{{{2
-		//! \brief	
 		const ::google::protobuf::Service* GetServiceFromName(const std::string& service_name);
-		//! \brief	
 		const ::google::protobuf::Message* CreateRequest(::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size);
-		//! \brief	
 		::google::protobuf::Message* CreateResponse(::google::protobuf::MethodDescriptor* method_descriptor);
-		//! \brief	
 		bool ParseBinary(const BinaryMemory& binary, RpcMessage& rpc_message, ::google::protobuf::Service* Service);
 		/// }}}2
 	private:

@@ -33,23 +33,24 @@ FrTcpClient::FrTcpClient(const std::string &_ip, int _port)
 FrTcpClient::~FrTcpClient(){
 }
 
-bool FrTcpClient::start(const string &ip, int port){
+bool FrTcpClient::Start(const string &ip, int port){
 	bool bAsynConn(false);
 	if(!m_pClient->Start(ip.c_str(), port, bAsynConn)){
-		TCP_DEBUG_E("连接失败[" << ip << ":" << port << "]");
+		DEBUG_E("连接失败[" << ip << ":" << port << "]");
 		return false;
 	}
-	return FrTcpLinker::start(ip, port);
+	return true;
 }
 
-bool FrTcpClient::stop(){
-	if(m_pClient->Stop()){
-		return FrTcpLinker::stop();
-	}
-	return false;
+bool FrTcpClient::Stop(){
+	return m_pClient->Stop();
 }
 
-bool FrTcpClient::Send(const BinaryMemory &binary){
+bool FrTcpClient::Disconnect(Socket socket){
+	return Stop();
+}
+
+bool FrTcpClient::Send(Socket socket, const BinaryMemory &binary){
 	if(isConnect() && !binary.empty() && binary.size() <= m_pClient->GetSocketBufferSize()){
 		std::lock_guard<std::mutex> localLock(mutex_);
 		Byte pHead[PROTO_HEAD_SIZE] = {0};
@@ -62,21 +63,29 @@ bool FrTcpClient::Send(const BinaryMemory &binary){
 					offset += max_packet_size_;
 				}
 				else{
-					TCP_DEBUG_E("发送包失败。打包之前的长度" << binary.size() << "包长度为" << binary.size() << " 数据包头的命令号为 [" << *(short*)binary.buffer() << "]");
+					DEBUG_E("发送包失败。打包之前的长度" << binary.size() << "包长度为" << binary.size() << " 数据包头的命令号为 [" << *(short*)binary.buffer() << "]");
 					return false;
 				}
 			}
 		}
 		else{
-			TCP_DEBUG_E("发送包头失败,请检查链接是否已经断开.");
+			DEBUG_E("发送包头失败,请检查链接是否已经断开.");
 			return false;
 		}
 	}
 	else{
-		TCP_DEBUG_I("丢弃包,包长度[" << binary.size() << "].");
+		DEBUG_I("丢弃包,包长度[" << binary.size() << "].");
 		return false;
 	}
 	return true;
+}
+
+bool FrTcpClient::SendGroup(const vector<Socket>& socket, const BinaryMemory& binary){
+	return Send(0, binary);
+}
+
+bool GetRemoteAddress(Socket socket, std::string& ip, Port& port){
+	return false;
 }
 
 int FrTcpClient::OnConnect(Socket socket){ return 0; }
@@ -90,7 +99,7 @@ EnHandleResult FrTcpClient::OnConnect(ITcpClient* pSender, Socket socket){
 	unsigned short port;
 
 	pSender->GetRemoteHost(sAddress, iAddressLen, port);
-	TCP_DEBUG_I("连接服务器成功。 [" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
+	DEBUG_I("连接服务器成功。 [" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
 
 	m_Connect = true;
 	socket_ = socket;
@@ -110,7 +119,7 @@ EnHandleResult FrTcpClient::OnReceive(ITcpClient* pSender, Socket socket, int iL
 		while(iLength > 0 && iLength >= sizeof(size) && HR_OK == pClient->Peek((Byte*)&size, sizeof(size))){
 			if(size >= m_pClient->GetSocketBufferSize()){
 				stop(); 
-				TCP_DEBUG_E("尺寸大小TCP缓存 自动断开连接.");
+				DEBUG_E("尺寸大小TCP缓存 自动断开连接.");
 				return HR_ERROR;
 			}
 
@@ -144,7 +153,7 @@ EnHandleResult FrTcpClient::OnClose(ITcpClient* pSender, Socket socket, EnSocket
 	unsigned short port;
 
 	pSender->GetRemoteHost(sAddress, iAddressLen, port);
-	TCP_DEBUG_I("客户端[" << string(sAddress, iAddressLen - 1) << ":" << port << "]连接断开 HPScoket errorCode [" << iErrorCode << "]");
+	DEBUG_I("客户端[" << string(sAddress, iAddressLen - 1) << ":" << port << "]连接断开 HPScoket errorCode [" << iErrorCode << "]");
 
 	m_Connect = false;
 	OnDisconnect(socket);

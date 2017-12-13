@@ -10,6 +10,7 @@ PROJECT_OBJECTS= \
 	./$(OUTPUT_TEMPORARY_PATH)/./server.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./channel.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./closure.o \
+	./$(OUTPUT_TEMPORARY_PATH)/./controller.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./frrpc_function.o
 
 all : ${PROJECT_OBJECTS} proto

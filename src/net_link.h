@@ -25,6 +25,14 @@ class NetLink{
 		NetLink();
 		virtual ~NetLink();
 	public:
+		virtual bool Start(const std::string& ip, Port port) = 0;
+		virtual void Stop() = 0;
+		virtual bool Disconnect(Socket socket);
+
+		virtual bool Send(Socket socket, const BinaryMemory& binary)=0;
+		virtual bool SendGroup(const vector<Socket>& socket, const BinaryMemory& binary)=0;
+		virtual bool GetRemoteAddress(Socket socket, std::string& ip, Port& port)=0;
+	public:
 		inline int64_t max_binary_size()const{ return max_binary_size_; }
 		inline int64_t set_max_binary_size(int64_t max_binary_size){ max_binary_size_ = max_binary_size; }
 	public:
