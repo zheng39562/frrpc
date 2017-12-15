@@ -29,8 +29,12 @@ class NetLink{
 		virtual void Stop() = 0;
 		virtual bool Disconnect(Socket socket);
 
-		virtual bool Send(Socket socket, const BinaryMemory& binary)=0;
-		virtual bool SendGroup(const vector<Socket>& socket, const BinaryMemory& binary)=0;
+		// hpsocket version has a bug : Send big data by multiple thread to the same socket.It does not ensure data order . 
+		// Big that means : GetSocketBufferSize()
+		// TODO:
+		//	Will Changes library of network.
+		virtual bool Send(Socket socket, const fr_public::BinaryMemory& binary)=0;
+		virtual bool SendGroup(const vector<Socket>& socket, const fr_public::BinaryMemory& binary)=0;
 		virtual bool GetRemoteAddress(Socket socket, std::string& ip, Port& port)=0;
 	public:
 		inline int64_t max_binary_size()const{ return max_binary_size_; }

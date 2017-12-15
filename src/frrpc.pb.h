@@ -43,15 +43,15 @@ struct TableStruct {
   static const ::google::protobuf::uint32 offsets[];
 };
 void AddDescriptors();
-void InitDefaultsRpcRequestImpl();
-void InitDefaultsRpcRequest();
-void InitDefaultsRpcResponseImpl();
-void InitDefaultsRpcResponse();
+void InitDefaultsRpcRequestMetaImpl();
+void InitDefaultsRpcRequestMeta();
+void InitDefaultsRpcResponseMetaImpl();
+void InitDefaultsRpcResponseMeta();
 void InitDefaultsRpcMetaImpl();
 void InitDefaultsRpcMeta();
 inline void InitDefaults() {
-  InitDefaultsRpcRequest();
-  InitDefaultsRpcResponse();
+  InitDefaultsRpcRequestMeta();
+  InitDefaultsRpcResponseMeta();
   InitDefaultsRpcMeta();
 }
 }  // namespace protobuf_frrpc_2eproto
@@ -59,12 +59,12 @@ namespace frrpc {
 class RpcMeta;
 class RpcMetaDefaultTypeInternal;
 extern RpcMetaDefaultTypeInternal _RpcMeta_default_instance_;
-class RpcRequest;
-class RpcRequestDefaultTypeInternal;
-extern RpcRequestDefaultTypeInternal _RpcRequest_default_instance_;
-class RpcResponse;
-class RpcResponseDefaultTypeInternal;
-extern RpcResponseDefaultTypeInternal _RpcResponse_default_instance_;
+class RpcRequestMeta;
+class RpcRequestMetaDefaultTypeInternal;
+extern RpcRequestMetaDefaultTypeInternal _RpcRequestMeta_default_instance_;
+class RpcResponseMeta;
+class RpcResponseMetaDefaultTypeInternal;
+extern RpcResponseMetaDefaultTypeInternal _RpcResponseMeta_default_instance_;
 }  // namespace frrpc
 namespace frrpc {
 
@@ -91,24 +91,24 @@ inline bool eCompressType_Parse(
 }
 // ===================================================================
 
-class RpcRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:frrpc.RpcRequest) */ {
+class RpcRequestMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:frrpc.RpcRequestMeta) */ {
  public:
-  RpcRequest();
-  virtual ~RpcRequest();
+  RpcRequestMeta();
+  virtual ~RpcRequestMeta();
 
-  RpcRequest(const RpcRequest& from);
+  RpcRequestMeta(const RpcRequestMeta& from);
 
-  inline RpcRequest& operator=(const RpcRequest& from) {
+  inline RpcRequestMeta& operator=(const RpcRequestMeta& from) {
     CopyFrom(from);
     return *this;
   }
   #if LANG_CXX11
-  RpcRequest(RpcRequest&& from) noexcept
-    : RpcRequest() {
+  RpcRequestMeta(RpcRequestMeta&& from) noexcept
+    : RpcRequestMeta() {
     *this = ::std::move(from);
   }
 
-  inline RpcRequest& operator=(RpcRequest&& from) noexcept {
+  inline RpcRequestMeta& operator=(RpcRequestMeta&& from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
       if (this != &from) InternalSwap(&from);
     } else {
@@ -118,30 +118,30 @@ class RpcRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   }
   #endif
   static const ::google::protobuf::Descriptor* descriptor();
-  static const RpcRequest& default_instance();
+  static const RpcRequestMeta& default_instance();
 
   static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const RpcRequest* internal_default_instance() {
-    return reinterpret_cast<const RpcRequest*>(
-               &_RpcRequest_default_instance_);
+  static inline const RpcRequestMeta* internal_default_instance() {
+    return reinterpret_cast<const RpcRequestMeta*>(
+               &_RpcRequestMeta_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
     0;
 
-  void Swap(RpcRequest* other);
-  friend void swap(RpcRequest& a, RpcRequest& b) {
+  void Swap(RpcRequestMeta* other);
+  friend void swap(RpcRequestMeta& a, RpcRequestMeta& b) {
     a.Swap(&b);
   }
 
   // implements Message ----------------------------------------------
 
-  inline RpcRequest* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline RpcRequestMeta* New() const PROTOBUF_FINAL { return New(NULL); }
 
-  RpcRequest* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  RpcRequestMeta* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
   void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
   void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const RpcRequest& from);
-  void MergeFrom(const RpcRequest& from);
+  void CopyFrom(const RpcRequestMeta& from);
+  void MergeFrom(const RpcRequestMeta& from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
@@ -157,7 +157,7 @@ class RpcRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(RpcRequest* other);
+  void InternalSwap(RpcRequestMeta* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return NULL;
@@ -179,35 +179,42 @@ class RpcRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::protobuf::int64 request_id() const;
   void set_request_id(::google::protobuf::int64 value);
 
-  // @@protoc_insertion_point(class_scope:frrpc.RpcRequest)
+  // uint32 request_size = 2;
+  void clear_request_size();
+  static const int kRequestSizeFieldNumber = 2;
+  ::google::protobuf::uint32 request_size() const;
+  void set_request_size(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:frrpc.RpcRequestMeta)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::int64 request_id_;
+  ::google::protobuf::uint32 request_size_;
   mutable int _cached_size_;
   friend struct ::protobuf_frrpc_2eproto::TableStruct;
-  friend void ::protobuf_frrpc_2eproto::InitDefaultsRpcRequestImpl();
+  friend void ::protobuf_frrpc_2eproto::InitDefaultsRpcRequestMetaImpl();
 };
 // -------------------------------------------------------------------
 
-class RpcResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:frrpc.RpcResponse) */ {
+class RpcResponseMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:frrpc.RpcResponseMeta) */ {
  public:
-  RpcResponse();
-  virtual ~RpcResponse();
+  RpcResponseMeta();
+  virtual ~RpcResponseMeta();
 
-  RpcResponse(const RpcResponse& from);
+  RpcResponseMeta(const RpcResponseMeta& from);
 
-  inline RpcResponse& operator=(const RpcResponse& from) {
+  inline RpcResponseMeta& operator=(const RpcResponseMeta& from) {
     CopyFrom(from);
     return *this;
   }
   #if LANG_CXX11
-  RpcResponse(RpcResponse&& from) noexcept
-    : RpcResponse() {
+  RpcResponseMeta(RpcResponseMeta&& from) noexcept
+    : RpcResponseMeta() {
     *this = ::std::move(from);
   }
 
-  inline RpcResponse& operator=(RpcResponse&& from) noexcept {
+  inline RpcResponseMeta& operator=(RpcResponseMeta&& from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
       if (this != &from) InternalSwap(&from);
     } else {
@@ -217,30 +224,30 @@ class RpcResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
   }
   #endif
   static const ::google::protobuf::Descriptor* descriptor();
-  static const RpcResponse& default_instance();
+  static const RpcResponseMeta& default_instance();
 
   static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const RpcResponse* internal_default_instance() {
-    return reinterpret_cast<const RpcResponse*>(
-               &_RpcResponse_default_instance_);
+  static inline const RpcResponseMeta* internal_default_instance() {
+    return reinterpret_cast<const RpcResponseMeta*>(
+               &_RpcResponseMeta_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
     1;
 
-  void Swap(RpcResponse* other);
-  friend void swap(RpcResponse& a, RpcResponse& b) {
+  void Swap(RpcResponseMeta* other);
+  friend void swap(RpcResponseMeta& a, RpcResponseMeta& b) {
     a.Swap(&b);
   }
 
   // implements Message ----------------------------------------------
 
-  inline RpcResponse* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline RpcResponseMeta* New() const PROTOBUF_FINAL { return New(NULL); }
 
-  RpcResponse* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  RpcResponseMeta* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
   void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
   void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const RpcResponse& from);
-  void MergeFrom(const RpcResponse& from);
+  void CopyFrom(const RpcResponseMeta& from);
+  void MergeFrom(const RpcResponseMeta& from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
@@ -256,7 +263,7 @@ class RpcResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(RpcResponse* other);
+  void InternalSwap(RpcResponseMeta* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return NULL;
@@ -284,15 +291,22 @@ class RpcResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
   ::google::protobuf::RepeatedField< ::google::protobuf::int32 >*
       mutable_send_socket_list();
 
-  // @@protoc_insertion_point(class_scope:frrpc.RpcResponse)
+  // uint32 response_size = 2;
+  void clear_response_size();
+  static const int kResponseSizeFieldNumber = 2;
+  ::google::protobuf::uint32 response_size() const;
+  void set_response_size(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:frrpc.RpcResponseMeta)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::RepeatedField< ::google::protobuf::int32 > send_socket_list_;
   mutable int _send_socket_list_cached_byte_size_;
+  ::google::protobuf::uint32 response_size_;
   mutable int _cached_size_;
   friend struct ::protobuf_frrpc_2eproto::TableStruct;
-  friend void ::protobuf_frrpc_2eproto::InitDefaultsRpcResponseImpl();
+  friend void ::protobuf_frrpc_2eproto::InitDefaultsRpcResponseMetaImpl();
 };
 // -------------------------------------------------------------------
 
@@ -406,29 +420,23 @@ class RpcMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::std::string* release_authentication_data();
   void set_allocated_authentication_data(::std::string* authentication_data);
 
-  // .frrpc.RpcRequest rpc_request = 6;
-  bool has_rpc_request() const;
-  void clear_rpc_request();
-  static const int kRpcRequestFieldNumber = 6;
-  const ::frrpc::RpcRequest& rpc_request() const;
-  ::frrpc::RpcRequest* release_rpc_request();
-  ::frrpc::RpcRequest* mutable_rpc_request();
-  void set_allocated_rpc_request(::frrpc::RpcRequest* rpc_request);
+  // .frrpc.RpcRequestMeta rpc_request_meta = 3;
+  bool has_rpc_request_meta() const;
+  void clear_rpc_request_meta();
+  static const int kRpcRequestMetaFieldNumber = 3;
+  const ::frrpc::RpcRequestMeta& rpc_request_meta() const;
+  ::frrpc::RpcRequestMeta* release_rpc_request_meta();
+  ::frrpc::RpcRequestMeta* mutable_rpc_request_meta();
+  void set_allocated_rpc_request_meta(::frrpc::RpcRequestMeta* rpc_request_meta);
 
-  // .frrpc.RpcResponse rpc_response = 7;
-  bool has_rpc_response() const;
-  void clear_rpc_response();
-  static const int kRpcResponseFieldNumber = 7;
-  const ::frrpc::RpcResponse& rpc_response() const;
-  ::frrpc::RpcResponse* release_rpc_response();
-  ::frrpc::RpcResponse* mutable_rpc_response();
-  void set_allocated_rpc_response(::frrpc::RpcResponse* rpc_response);
-
-  // int64 body_size = 3;
-  void clear_body_size();
-  static const int kBodySizeFieldNumber = 3;
-  ::google::protobuf::int64 body_size() const;
-  void set_body_size(::google::protobuf::int64 value);
+  // .frrpc.RpcResponseMeta rpc_response_meta = 4;
+  bool has_rpc_response_meta() const;
+  void clear_rpc_response_meta();
+  static const int kRpcResponseMetaFieldNumber = 4;
+  const ::frrpc::RpcResponseMeta& rpc_response_meta() const;
+  ::frrpc::RpcResponseMeta* release_rpc_response_meta();
+  ::frrpc::RpcResponseMeta* mutable_rpc_response_meta();
+  void set_allocated_rpc_response_meta(::frrpc::RpcResponseMeta* rpc_response_meta);
 
   // int32 method_index = 2;
   void clear_method_index();
@@ -436,9 +444,9 @@ class RpcMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::google::protobuf::int32 method_index() const;
   void set_method_index(::google::protobuf::int32 value);
 
-  // .frrpc.eCompressType compress_type = 4;
+  // .frrpc.eCompressType compress_type = 10;
   void clear_compress_type();
-  static const int kCompressTypeFieldNumber = 4;
+  static const int kCompressTypeFieldNumber = 10;
   ::frrpc::eCompressType compress_type() const;
   void set_compress_type(::frrpc::eCompressType value);
 
@@ -448,9 +456,8 @@ class RpcMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::internal::ArenaStringPtr server_name_;
   ::google::protobuf::internal::ArenaStringPtr authentication_data_;
-  ::frrpc::RpcRequest* rpc_request_;
-  ::frrpc::RpcResponse* rpc_response_;
-  ::google::protobuf::int64 body_size_;
+  ::frrpc::RpcRequestMeta* rpc_request_meta_;
+  ::frrpc::RpcResponseMeta* rpc_response_meta_;
   ::google::protobuf::int32 method_index_;
   int compress_type_;
   mutable int _cached_size_;
@@ -466,54 +473,82 @@ class RpcMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
-// RpcRequest
+// RpcRequestMeta
 
 // int64 request_id = 1;
-inline void RpcRequest::clear_request_id() {
+inline void RpcRequestMeta::clear_request_id() {
   request_id_ = GOOGLE_LONGLONG(0);
 }
-inline ::google::protobuf::int64 RpcRequest::request_id() const {
-  // @@protoc_insertion_point(field_get:frrpc.RpcRequest.request_id)
+inline ::google::protobuf::int64 RpcRequestMeta::request_id() const {
+  // @@protoc_insertion_point(field_get:frrpc.RpcRequestMeta.request_id)
   return request_id_;
 }
-inline void RpcRequest::set_request_id(::google::protobuf::int64 value) {
+inline void RpcRequestMeta::set_request_id(::google::protobuf::int64 value) {
   
   request_id_ = value;
-  // @@protoc_insertion_point(field_set:frrpc.RpcRequest.request_id)
+  // @@protoc_insertion_point(field_set:frrpc.RpcRequestMeta.request_id)
+}
+
+// uint32 request_size = 2;
+inline void RpcRequestMeta::clear_request_size() {
+  request_size_ = 0u;
+}
+inline ::google::protobuf::uint32 RpcRequestMeta::request_size() const {
+  // @@protoc_insertion_point(field_get:frrpc.RpcRequestMeta.request_size)
+  return request_size_;
+}
+inline void RpcRequestMeta::set_request_size(::google::protobuf::uint32 value) {
+  
+  request_size_ = value;
+  // @@protoc_insertion_point(field_set:frrpc.RpcRequestMeta.request_size)
 }
 
 // -------------------------------------------------------------------
 
-// RpcResponse
+// RpcResponseMeta
 
 // repeated int32 send_socket_list = 1;
-inline int RpcResponse::send_socket_list_size() const {
+inline int RpcResponseMeta::send_socket_list_size() const {
   return send_socket_list_.size();
 }
-inline void RpcResponse::clear_send_socket_list() {
+inline void RpcResponseMeta::clear_send_socket_list() {
   send_socket_list_.Clear();
 }
-inline ::google::protobuf::int32 RpcResponse::send_socket_list(int index) const {
-  // @@protoc_insertion_point(field_get:frrpc.RpcResponse.send_socket_list)
+inline ::google::protobuf::int32 RpcResponseMeta::send_socket_list(int index) const {
+  // @@protoc_insertion_point(field_get:frrpc.RpcResponseMeta.send_socket_list)
   return send_socket_list_.Get(index);
 }
-inline void RpcResponse::set_send_socket_list(int index, ::google::protobuf::int32 value) {
+inline void RpcResponseMeta::set_send_socket_list(int index, ::google::protobuf::int32 value) {
   send_socket_list_.Set(index, value);
-  // @@protoc_insertion_point(field_set:frrpc.RpcResponse.send_socket_list)
+  // @@protoc_insertion_point(field_set:frrpc.RpcResponseMeta.send_socket_list)
 }
-inline void RpcResponse::add_send_socket_list(::google::protobuf::int32 value) {
+inline void RpcResponseMeta::add_send_socket_list(::google::protobuf::int32 value) {
   send_socket_list_.Add(value);
-  // @@protoc_insertion_point(field_add:frrpc.RpcResponse.send_socket_list)
+  // @@protoc_insertion_point(field_add:frrpc.RpcResponseMeta.send_socket_list)
 }
 inline const ::google::protobuf::RepeatedField< ::google::protobuf::int32 >&
-RpcResponse::send_socket_list() const {
-  // @@protoc_insertion_point(field_list:frrpc.RpcResponse.send_socket_list)
+RpcResponseMeta::send_socket_list() const {
+  // @@protoc_insertion_point(field_list:frrpc.RpcResponseMeta.send_socket_list)
   return send_socket_list_;
 }
 inline ::google::protobuf::RepeatedField< ::google::protobuf::int32 >*
-RpcResponse::mutable_send_socket_list() {
-  // @@protoc_insertion_point(field_mutable_list:frrpc.RpcResponse.send_socket_list)
+RpcResponseMeta::mutable_send_socket_list() {
+  // @@protoc_insertion_point(field_mutable_list:frrpc.RpcResponseMeta.send_socket_list)
   return &send_socket_list_;
+}
+
+// uint32 response_size = 2;
+inline void RpcResponseMeta::clear_response_size() {
+  response_size_ = 0u;
+}
+inline ::google::protobuf::uint32 RpcResponseMeta::response_size() const {
+  // @@protoc_insertion_point(field_get:frrpc.RpcResponseMeta.response_size)
+  return response_size_;
+}
+inline void RpcResponseMeta::set_response_size(::google::protobuf::uint32 value) {
+  
+  response_size_ = value;
+  // @@protoc_insertion_point(field_set:frrpc.RpcResponseMeta.response_size)
 }
 
 // -------------------------------------------------------------------
@@ -587,32 +622,104 @@ inline void RpcMeta::set_method_index(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:frrpc.RpcMeta.method_index)
 }
 
-// int64 body_size = 3;
-inline void RpcMeta::clear_body_size() {
-  body_size_ = GOOGLE_LONGLONG(0);
+// .frrpc.RpcRequestMeta rpc_request_meta = 3;
+inline bool RpcMeta::has_rpc_request_meta() const {
+  return this != internal_default_instance() && rpc_request_meta_ != NULL;
 }
-inline ::google::protobuf::int64 RpcMeta::body_size() const {
-  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.body_size)
-  return body_size_;
+inline void RpcMeta::clear_rpc_request_meta() {
+  if (GetArenaNoVirtual() == NULL && rpc_request_meta_ != NULL) {
+    delete rpc_request_meta_;
+  }
+  rpc_request_meta_ = NULL;
 }
-inline void RpcMeta::set_body_size(::google::protobuf::int64 value) {
+inline const ::frrpc::RpcRequestMeta& RpcMeta::rpc_request_meta() const {
+  const ::frrpc::RpcRequestMeta* p = rpc_request_meta_;
+  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.rpc_request_meta)
+  return p != NULL ? *p : *reinterpret_cast<const ::frrpc::RpcRequestMeta*>(
+      &::frrpc::_RpcRequestMeta_default_instance_);
+}
+inline ::frrpc::RpcRequestMeta* RpcMeta::release_rpc_request_meta() {
+  // @@protoc_insertion_point(field_release:frrpc.RpcMeta.rpc_request_meta)
   
-  body_size_ = value;
-  // @@protoc_insertion_point(field_set:frrpc.RpcMeta.body_size)
+  ::frrpc::RpcRequestMeta* temp = rpc_request_meta_;
+  rpc_request_meta_ = NULL;
+  return temp;
+}
+inline ::frrpc::RpcRequestMeta* RpcMeta::mutable_rpc_request_meta() {
+  
+  if (rpc_request_meta_ == NULL) {
+    rpc_request_meta_ = new ::frrpc::RpcRequestMeta;
+  }
+  // @@protoc_insertion_point(field_mutable:frrpc.RpcMeta.rpc_request_meta)
+  return rpc_request_meta_;
+}
+inline void RpcMeta::set_allocated_rpc_request_meta(::frrpc::RpcRequestMeta* rpc_request_meta) {
+  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
+  if (message_arena == NULL) {
+    delete rpc_request_meta_;
+  }
+  if (rpc_request_meta) {
+    ::google::protobuf::Arena* submessage_arena = NULL;
+    if (message_arena != submessage_arena) {
+      rpc_request_meta = ::google::protobuf::internal::GetOwnedMessage(
+          message_arena, rpc_request_meta, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  rpc_request_meta_ = rpc_request_meta;
+  // @@protoc_insertion_point(field_set_allocated:frrpc.RpcMeta.rpc_request_meta)
 }
 
-// .frrpc.eCompressType compress_type = 4;
-inline void RpcMeta::clear_compress_type() {
-  compress_type_ = 0;
+// .frrpc.RpcResponseMeta rpc_response_meta = 4;
+inline bool RpcMeta::has_rpc_response_meta() const {
+  return this != internal_default_instance() && rpc_response_meta_ != NULL;
 }
-inline ::frrpc::eCompressType RpcMeta::compress_type() const {
-  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.compress_type)
-  return static_cast< ::frrpc::eCompressType >(compress_type_);
+inline void RpcMeta::clear_rpc_response_meta() {
+  if (GetArenaNoVirtual() == NULL && rpc_response_meta_ != NULL) {
+    delete rpc_response_meta_;
+  }
+  rpc_response_meta_ = NULL;
 }
-inline void RpcMeta::set_compress_type(::frrpc::eCompressType value) {
+inline const ::frrpc::RpcResponseMeta& RpcMeta::rpc_response_meta() const {
+  const ::frrpc::RpcResponseMeta* p = rpc_response_meta_;
+  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.rpc_response_meta)
+  return p != NULL ? *p : *reinterpret_cast<const ::frrpc::RpcResponseMeta*>(
+      &::frrpc::_RpcResponseMeta_default_instance_);
+}
+inline ::frrpc::RpcResponseMeta* RpcMeta::release_rpc_response_meta() {
+  // @@protoc_insertion_point(field_release:frrpc.RpcMeta.rpc_response_meta)
   
-  compress_type_ = value;
-  // @@protoc_insertion_point(field_set:frrpc.RpcMeta.compress_type)
+  ::frrpc::RpcResponseMeta* temp = rpc_response_meta_;
+  rpc_response_meta_ = NULL;
+  return temp;
+}
+inline ::frrpc::RpcResponseMeta* RpcMeta::mutable_rpc_response_meta() {
+  
+  if (rpc_response_meta_ == NULL) {
+    rpc_response_meta_ = new ::frrpc::RpcResponseMeta;
+  }
+  // @@protoc_insertion_point(field_mutable:frrpc.RpcMeta.rpc_response_meta)
+  return rpc_response_meta_;
+}
+inline void RpcMeta::set_allocated_rpc_response_meta(::frrpc::RpcResponseMeta* rpc_response_meta) {
+  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
+  if (message_arena == NULL) {
+    delete rpc_response_meta_;
+  }
+  if (rpc_response_meta) {
+    ::google::protobuf::Arena* submessage_arena = NULL;
+    if (message_arena != submessage_arena) {
+      rpc_response_meta = ::google::protobuf::internal::GetOwnedMessage(
+          message_arena, rpc_response_meta, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  rpc_response_meta_ = rpc_response_meta;
+  // @@protoc_insertion_point(field_set_allocated:frrpc.RpcMeta.rpc_response_meta)
 }
 
 // bytes authentication_data = 5;
@@ -668,104 +775,18 @@ inline void RpcMeta::set_allocated_authentication_data(::std::string* authentica
   // @@protoc_insertion_point(field_set_allocated:frrpc.RpcMeta.authentication_data)
 }
 
-// .frrpc.RpcRequest rpc_request = 6;
-inline bool RpcMeta::has_rpc_request() const {
-  return this != internal_default_instance() && rpc_request_ != NULL;
+// .frrpc.eCompressType compress_type = 10;
+inline void RpcMeta::clear_compress_type() {
+  compress_type_ = 0;
 }
-inline void RpcMeta::clear_rpc_request() {
-  if (GetArenaNoVirtual() == NULL && rpc_request_ != NULL) {
-    delete rpc_request_;
-  }
-  rpc_request_ = NULL;
+inline ::frrpc::eCompressType RpcMeta::compress_type() const {
+  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.compress_type)
+  return static_cast< ::frrpc::eCompressType >(compress_type_);
 }
-inline const ::frrpc::RpcRequest& RpcMeta::rpc_request() const {
-  const ::frrpc::RpcRequest* p = rpc_request_;
-  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.rpc_request)
-  return p != NULL ? *p : *reinterpret_cast<const ::frrpc::RpcRequest*>(
-      &::frrpc::_RpcRequest_default_instance_);
-}
-inline ::frrpc::RpcRequest* RpcMeta::release_rpc_request() {
-  // @@protoc_insertion_point(field_release:frrpc.RpcMeta.rpc_request)
+inline void RpcMeta::set_compress_type(::frrpc::eCompressType value) {
   
-  ::frrpc::RpcRequest* temp = rpc_request_;
-  rpc_request_ = NULL;
-  return temp;
-}
-inline ::frrpc::RpcRequest* RpcMeta::mutable_rpc_request() {
-  
-  if (rpc_request_ == NULL) {
-    rpc_request_ = new ::frrpc::RpcRequest;
-  }
-  // @@protoc_insertion_point(field_mutable:frrpc.RpcMeta.rpc_request)
-  return rpc_request_;
-}
-inline void RpcMeta::set_allocated_rpc_request(::frrpc::RpcRequest* rpc_request) {
-  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
-  if (message_arena == NULL) {
-    delete rpc_request_;
-  }
-  if (rpc_request) {
-    ::google::protobuf::Arena* submessage_arena = NULL;
-    if (message_arena != submessage_arena) {
-      rpc_request = ::google::protobuf::internal::GetOwnedMessage(
-          message_arena, rpc_request, submessage_arena);
-    }
-    
-  } else {
-    
-  }
-  rpc_request_ = rpc_request;
-  // @@protoc_insertion_point(field_set_allocated:frrpc.RpcMeta.rpc_request)
-}
-
-// .frrpc.RpcResponse rpc_response = 7;
-inline bool RpcMeta::has_rpc_response() const {
-  return this != internal_default_instance() && rpc_response_ != NULL;
-}
-inline void RpcMeta::clear_rpc_response() {
-  if (GetArenaNoVirtual() == NULL && rpc_response_ != NULL) {
-    delete rpc_response_;
-  }
-  rpc_response_ = NULL;
-}
-inline const ::frrpc::RpcResponse& RpcMeta::rpc_response() const {
-  const ::frrpc::RpcResponse* p = rpc_response_;
-  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.rpc_response)
-  return p != NULL ? *p : *reinterpret_cast<const ::frrpc::RpcResponse*>(
-      &::frrpc::_RpcResponse_default_instance_);
-}
-inline ::frrpc::RpcResponse* RpcMeta::release_rpc_response() {
-  // @@protoc_insertion_point(field_release:frrpc.RpcMeta.rpc_response)
-  
-  ::frrpc::RpcResponse* temp = rpc_response_;
-  rpc_response_ = NULL;
-  return temp;
-}
-inline ::frrpc::RpcResponse* RpcMeta::mutable_rpc_response() {
-  
-  if (rpc_response_ == NULL) {
-    rpc_response_ = new ::frrpc::RpcResponse;
-  }
-  // @@protoc_insertion_point(field_mutable:frrpc.RpcMeta.rpc_response)
-  return rpc_response_;
-}
-inline void RpcMeta::set_allocated_rpc_response(::frrpc::RpcResponse* rpc_response) {
-  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
-  if (message_arena == NULL) {
-    delete rpc_response_;
-  }
-  if (rpc_response) {
-    ::google::protobuf::Arena* submessage_arena = NULL;
-    if (message_arena != submessage_arena) {
-      rpc_response = ::google::protobuf::internal::GetOwnedMessage(
-          message_arena, rpc_response, submessage_arena);
-    }
-    
-  } else {
-    
-  }
-  rpc_response_ = rpc_response;
-  // @@protoc_insertion_point(field_set_allocated:frrpc.RpcMeta.rpc_response)
+  compress_type_ = value;
+  // @@protoc_insertion_point(field_set:frrpc.RpcMeta.compress_type)
 }
 
 #ifdef __GNUC__

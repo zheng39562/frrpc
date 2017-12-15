@@ -61,12 +61,10 @@ bool NetServer::Disconnect(Socket socket){
 
 bool NetServer::Send(Socket socket, const BinaryMemory &binary){
 	if(socket <= 0){
-#ifdef _DEBUG
-		assert(1);
-#else
+		DEBUG_E("socket is zero. Can not send data to socket of zero.");
 		return false;
-#endif
 	}
+
 	if(!binary.empty() && binary.size() <= server_->GetSocketBufferSize()){
 		Byte pHead[PROTO_HEAD_SIZE] = {0};
 		if(GetHead(pHead, binary) && server_->Send(socket, pHead, head_length())){

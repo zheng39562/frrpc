@@ -25,10 +25,12 @@ class RpcMessage{
 		bool IsCompleted();
 		void Clear();
 	public:
-		Scoket socket;
+		int32_t request_id;
+		RpcMeta* rpc_meta;
 		const ::google::protobuf::MethodDescriptor* method_descriptor;
 		const ::google::protobuf::Message* request;
 		::google::protobuf::Message* response;
+
 };
 
 std::shared_ptr<RpcMessage> RpcMessagePtr;

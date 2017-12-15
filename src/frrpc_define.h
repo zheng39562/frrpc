@@ -18,7 +18,16 @@ typedef unsigned char Byte;
 typedef uint16_t RpcMetaSize;
 typedef uint32_t RpcRequestSize;
 
+// marco function. // {{{2
 #define BYTE_CONVERT_TO_TYPE_OFFSET(byte_ptr, type, offset) *(const type*)((const Byte*)byte_ptr + offset)
+#define DELETE_POINT_IF_NOT_NULL(ptr) if(ptr != NULL){ delete ptr; ptr = NULL; }
+#define ADDR_MOVE_BY_BYTE(ptr, offset) (void*)((char*)ptr + offset)
+#define CONST_ADDR_MOVE_BY_BYTE(ptr, offset) (const void*)((const char*)ptr + offset)
+// }}}2
+
+// marco number {{{2
+#define RPC_REQUEST_ID_NULL 0
+// }}}2
 
 #endif 
 

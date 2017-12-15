@@ -11,7 +11,8 @@
 
 namespace frrpc{
 
-bool RunUntilStop();
+void RunUntilStop();
+bool IsQuit();
 
 }// namespace frrpc{
 

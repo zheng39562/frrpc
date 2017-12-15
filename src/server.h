@@ -29,7 +29,7 @@ enum eLinkType{
 
 class ServerOption{
 	public:
-		// 默认为单线和网关模式.
+		// Default : single thread and gate module.
 		ServerOption():work_thread_num(1), receive_type(eLinkType_Gate) { ; }
 		~ServerOption()=default;
 	public:
@@ -40,25 +40,42 @@ class ServerOption{
 /// Server {{{1
 class Server{
 	public:
-		friend bool frrpc::RunUntilStop();
-	public:
 		Server();
 		Server(ServerOption& option);
 		~Server();
 	public:
+		/// Functions : Start {{{2
 		bool AddService(::google::protobuf::Service* service_);
 		bool Start(const string& ip, Port port);
+		/// }}}2
+
+		/// Functions : Send(Public) {{{2
+		//
+		inline bool SendRpcMessage(Socket socket, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response){
+			return SendRpcMessage({socket}, service_name, method_name, response);
+		}
+		bool SendRpcMessage(const vector<Socket>& sockets, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
+		/// }}}2
 	private:
-		/// 初始化函数{{{2
+		/// Functions : Initialization. {{{2
 		bool Init(ServerOption& option);
 		NetLink* CreateNetLink(eLinkType link_type);
 		/// }}}2
 		
-		/// 操作函数{{{2
+		/// Functions : Unclassified {{{2
 		void Stop();
+		//
+		void ReleaseRpcResource(RpcMessage* rpc_message);
 		/// }}}2
 		
-		/// 二进制消息解析函数集{{{2
+		/// Functions : Original send {{{2
+		// Build binary from meta and response
+		BinaryMemoryPtr BuildBinaryFromResponse(const ::google::protobuf::Message* meta, const ::google::protobuf::Message* response);
+		// Send data.
+		bool SendRpcMessage(const RpcMeta* meta, const BinaryMemoryPtr& binary);
+		/// }}}2
+		
+		/// Functions : Parse binary data{{{2
 		const ::google::protobuf::Service* GetServiceFromName(const std::string& service_name);
 		const ::google::protobuf::Message* CreateRequest(::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size);
 		::google::protobuf::Message* CreateResponse(::google::protobuf::MethodDescriptor* method_descriptor);
@@ -70,6 +87,7 @@ class Server{
 		std::map<std::string, ::google::protobu::Service*> name_2service_;
 		std::vector<std::thread> work_threads_;
 		DynamicMessageFactory message_factory_;
+		eCompressType compress_type_; 
 };
 /// Server }}}1
 

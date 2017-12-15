@@ -11,22 +11,25 @@
 namespace frrpc{
 
 RpcMessage::RpcMessage()
-	:socket_id(0),
+	:request_id(0),
+	 rpc_meta(NULL),
 	 method_descriptor(NULL),
 	 request(NULL),
 	 response(NULL)
 { ; }
+
 RpcMessage::~RpcMessage(){ ; }
 
 bool RpcMessage::IsCompleted(){
-	return socket_id != 0 && method_descriptor != NULL && request != NULL && response != NULL;
+	return rpc_meta != NULL && method_descriptor != NULL && request != NULL && response != NULL;
 }
 
 void RpcMessage::Clear(){
-	socket_id = 0;
+	request_id = 0;
+	DELETE_POINT_IF_NOT_NULL(rpc_meta);
 	method_descriptor = NULL;
-	request = NULL;
-	response = NULL;
+	DELETE_POINT_IF_NOT_NULL(request);
+	DELETE_POINT_IF_NOT_NULL(response);
 }
 
 } // namespace frrpc
