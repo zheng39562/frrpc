@@ -633,286 +633,270 @@ class MethodClosure10 : public ::google::protobuf::Closure {
 		Arg10 arg10_;
 };
 
-}  // namespace internal
-
 // See Closure.
 inline ::google::protobuf::Closure* NewCallback(void (*function)()) {
-	return new internal::FunctionClosure0(function, true);
+	return new frrpc::FunctionClosure0(function, true);
 }
 
 // See Closure.
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)()) {
-	return new internal::FunctionClosure0(function, false);
+	return new frrpc::FunctionClosure0(function, false);
 }
 
 // See Closure.
 template <typename Class, typename Pointer>
 inline ::google::protobuf::Closure* NewCallback(const Pointer& object, void (Class::*method)()) {
-	return new internal::MethodClosure0<Class, Pointer>(object, method, true);
+	return new frrpc::MethodClosure0<Class, Pointer>(object, method, true);
 }
 
 // See Closure.
 template <typename Class, typename Pointer>
 inline ::google::protobuf::Closure* NewPermanentCallback(const Pointer& object, void (Class::*method)()) {
-	return new internal::MethodClosure0<Class, Pointer>(object, method, false);
+	return new frrpc::MethodClosure0<Class, Pointer>(object, method, false);
 }
 
 // See Closure.
 template <typename Arg1>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1), Arg1 arg1) {
-	return new internal::FunctionClosure1<Arg1>(function, true, arg1);
+	return new frrpc::FunctionClosure1<Arg1>(function, true, arg1);
 }
 
 // See Closure.
 template <typename Arg1>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1), Arg1 arg1) {
-	return new internal::FunctionClosure1<Arg1>(function, false, arg1);
+	return new frrpc::FunctionClosure1<Arg1>(function, false, arg1);
 }
 
 // See Closure.
 template <typename Class, typename Pointer, typename Arg1>
 inline ::google::protobuf::Closure* NewCallback(const Pointer& object, void (Class::*method)(Arg1), Arg1 arg1) {
-	return new internal::MethodClosure1<Class, Pointer, Arg1>(object, method, true, arg1);
+	return new frrpc::MethodClosure1<Class, Pointer, Arg1>(object, method, true, arg1);
 }
 
 // See Closure.
 template <typename Class, typename Pointer, typename Arg1>
 inline ::google::protobuf::Closure* NewPermanentCallback(const Pointer& object, void (Class::*method)(Arg1), Arg1 arg1) {
-	return new internal::MethodClosure1<Class, Pointer, Arg1>(object, method, false, arg1);
+	return new frrpc::MethodClosure1<Class, Pointer, Arg1>(object, method, false, arg1);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2), Arg1 arg1, Arg2 arg2) {
-	return new internal::FunctionClosure2<Arg1, Arg2>( function, true, arg1, arg2);
+	return new frrpc::FunctionClosure2<Arg1, Arg2>( function, true, arg1, arg2);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2), Arg1 arg1, Arg2 arg2) {
-	return new internal::FunctionClosure2<Arg1, Arg2>( function, false, arg1, arg2);
+	return new frrpc::FunctionClosure2<Arg1, Arg2>( function, false, arg1, arg2);
 }
 
 // See Closure.
 template <typename Class, typename Pointer, typename Arg1, typename Arg2>
 inline ::google::protobuf::Closure* NewCallback(const Pointer& object, void (Class::*method)(Arg1, Arg2), Arg1 arg1, Arg2 arg2) {
-	return new internal::MethodClosure2<Class, Pointer, Arg1, Arg2>(object, method, true, arg1, arg2);
+	return new frrpc::MethodClosure2<Class, Pointer, Arg1, Arg2>(object, method, true, arg1, arg2);
 }
 
 // See Closure.
 template <typename Class, typename Pointer, typename Arg1, typename Arg2>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2), Arg1 arg1, Arg2 arg2) {
-	return new internal::MethodClosure2<Class, Pointer, Arg1, Arg2>( object, method, false, arg1, arg2); }
+	return new frrpc::MethodClosure2<Class, Pointer, Arg1, Arg2>( object, method, false, arg1, arg2); 
+}
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2, Arg3), Arg1 arg1, Arg2 arg2, Arg3 arg3) {
-	return new internal::FunctionClosure3<Arg1, Arg2, Arg3>( function, true, arg1, arg2, arg3);
+	return new frrpc::FunctionClosure3<Arg1, Arg2, Arg3>( function, true, arg1, arg2, arg3);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2, Arg3), Arg1 arg1, Arg2 arg2, Arg3 arg3) {
-	return new internal::FunctionClosure3<Arg1, Arg2, Arg3>( function, false, arg1, arg2, arg3);
+	return new frrpc::FunctionClosure3<Arg1, Arg2, Arg3>( function, false, arg1, arg2, arg3);
 }
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3>
 inline ::google::protobuf::Closure* NewCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3), Arg1 arg1, Arg2 arg2, Arg3 arg3) {
-	return new internal::MethodClosure3<Class, Pointer, Arg1, Arg2, Arg3>( object, method, true, arg1, arg2, arg3);
+	return new frrpc::MethodClosure3<Class, Pointer, Arg1, Arg2, Arg3>( object, method, true, arg1, arg2, arg3);
 }
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3), Arg1 arg1, Arg2 arg2, Arg3 arg3) {
-	return new internal::MethodClosure3<Class, Pointer, Arg1, Arg2, Arg3>( object, method, false, arg1, arg2, arg3);
+	return new frrpc::MethodClosure3<Class, Pointer, Arg1, Arg2, Arg3>( object, method, false, arg1, arg2, arg3);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2, Arg3, Arg4), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4) {
-	return new internal::FunctionClosure4<Arg1, Arg2, Arg3, Arg4>( function, true, arg1, arg2, arg3, arg4);
+	return new frrpc::FunctionClosure4<Arg1, Arg2, Arg3, Arg4>( function, true, arg1, arg2, arg3, arg4);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2, Arg3, Arg4), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4) {
-	return new internal::FunctionClosure4<Arg1, Arg2, Arg3, Arg4>( function, false, arg1, arg2, arg3, arg4);
+	return new frrpc::FunctionClosure4<Arg1, Arg2, Arg3, Arg4>( function, false, arg1, arg2, arg3, arg4);
 }
 
 // See Closure.
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4>
 inline ::google::protobuf::Closure* NewCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4) {
-	return new internal::MethodClosure4<Class, Pointer, Arg1, Arg2, Arg3, Arg4>( object, method, true, arg1, arg2, arg3, arg4);
+	return new frrpc::MethodClosure4<Class, Pointer, Arg1, Arg2, Arg3, Arg4>( object, method, true, arg1, arg2, arg3, arg4);
 }
 
 // See Closure.
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4) {
-	return new internal::MethodClosure4<Class, Pointer, Arg1, Arg2, Arg3, Arg4>( object, method, false, arg1, arg2, arg3, arg4);
+	return new frrpc::MethodClosure4<Class, Pointer, Arg1, Arg2, Arg3, Arg4>( object, method, false, arg1, arg2, arg3, arg4);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5) {
-	return new internal::FunctionClosure5<Arg1, Arg2, Arg3, Arg4, Arg5>( function, true, arg1, arg2, arg3, arg4, arg5);
+	return new frrpc::FunctionClosure5<Arg1, Arg2, Arg3, Arg4, Arg5>( function, true, arg1, arg2, arg3, arg4, arg5);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5) {
-	return new internal::FunctionClosure5<Arg1, Arg2, Arg3, Arg4, Arg5>( function, false, arg1, arg2, arg3, arg4, arg5);
+	return new frrpc::FunctionClosure5<Arg1, Arg2, Arg3, Arg4, Arg5>( function, false, arg1, arg2, arg3, arg4, arg5);
 }
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
 inline ::google::protobuf::Closure* NewCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5) {
-	return new internal::MethodClosure5<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5>( object, method, true, arg1, arg2, arg3, arg4, arg5);
+	return new frrpc::MethodClosure5<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5>( object, method, true, arg1, arg2, arg3, arg4, arg5);
 }
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5) {
-	return new internal::MethodClosure5<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5>( object, method, false, arg1, arg2, arg3, arg4, arg5);
+	return new frrpc::MethodClosure5<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5>( object, method, false, arg1, arg2, arg3, arg4, arg5);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6) {
-	return new internal::FunctionClosure6<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>( function, true, arg1, arg2, arg3, arg4, arg5, arg6);
+	return new frrpc::FunctionClosure6<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>( function, true, arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6) {
-	return new internal::FunctionClosure6<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>( function, false, arg1, arg2, arg3, arg4, arg5, arg6);
+	return new frrpc::FunctionClosure6<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>( function, false, arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6>
 inline ::google::protobuf::Closure* NewCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6) {
-	return new internal::MethodClosure6<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6);
+	return new frrpc::MethodClosure6<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6) {
-	return new internal::MethodClosure6<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6);
+	return new frrpc::MethodClosure6<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 // See Closure
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7) {
-	return new internal::FunctionClosure7<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>( function, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7); 
+	return new frrpc::FunctionClosure7<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>( function, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7); 
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7) {
-	return new internal::FunctionClosure7<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>( function, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+	return new frrpc::FunctionClosure7<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>( function, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
-
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7>
 inline ::google::protobuf::Closure* NewCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7) {
-	return new internal::MethodClosure7<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+	return new frrpc::MethodClosure7<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
-
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7) {
-	return new internal::MethodClosure7<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+	return new frrpc::MethodClosure7<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
-
-
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8) {
-	return new internal::FunctionClosure8<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>( function, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+	return new frrpc::FunctionClosure8<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>( function, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
-
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8) {
-	return new internal::FunctionClosure8<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>( function, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+	return new frrpc::FunctionClosure8<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>( function, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
-
-
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8>
 inline ::google::protobuf::Closure* NewCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8) {
-	return new internal::MethodClosure8<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+	return new frrpc::MethodClosure8<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
-
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8) {
-	return new internal::MethodClosure8<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+	return new frrpc::MethodClosure8<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
-
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9) {
-	return new internal::FunctionClosure9<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>( function, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+	return new frrpc::FunctionClosure9<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>( function, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 }
-
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9) {
-	return new internal::FunctionClosure9<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>( function, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+	return new frrpc::FunctionClosure9<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>( function, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 }
-
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9>
 inline ::google::protobuf::Closure* NewCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9) {
-	return new internal::MethodClosure9<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+	return new frrpc::MethodClosure9<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 }
-
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9) {
-	return new internal::MethodClosure9<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); 
+	return new frrpc::MethodClosure9<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); 
 }
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9, typename Arg10>
 inline ::google::protobuf::Closure* NewCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9, Arg10 arg10) {
-	return new internal::FunctionClosure10<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>( function, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+	return new frrpc::FunctionClosure10<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>( function, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
-
 
 // See Closure.
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9, typename Arg10>
 inline ::google::protobuf::Closure* NewPermanentCallback(void (*function)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9, Arg10 arg10) {
-	return new internal::FunctionClosure10<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>( function, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
+	return new frrpc::FunctionClosure10<Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>( function, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); 
 }
-
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9, typename Arg10>
 inline ::google::protobuf::Closure* NewCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9, Arg10 arg10) {
-	return new internal::MethodClosure10<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+	return new frrpc::MethodClosure10<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>( object, method, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
-
 
 // See Closure
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9, typename Arg10>
 inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object, void (Class::*method)(Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9, Arg10 arg10) {
-	return new internal::MethodClosure10<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+	return new frrpc::MethodClosure10<Class, Pointer, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10>( object, method, false, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
-
 } // namespace frrpc{
+
 
 #endif 
 

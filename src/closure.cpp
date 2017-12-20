@@ -10,17 +10,5 @@
 
 namespace frrpc{
 
-Closure::Closure(){
-	;
-}
-
-Closure::~Closure(){
-	;
-}
-
-void Closure::Run(){
-	;
-}
-
 } // namespace frrpc{
 

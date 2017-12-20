@@ -30,7 +30,6 @@ class RpcMessage{
 		const ::google::protobuf::MethodDescriptor* method_descriptor;
 		const ::google::protobuf::Message* request;
 		::google::protobuf::Message* response;
-
 };
 
 std::shared_ptr<RpcMessage> RpcMessagePtr;

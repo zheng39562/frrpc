@@ -10,6 +10,26 @@
 
 namespace frrpc{
 
-bool RunUntilStop();
+bool RunUntilStop(){
+}
+
+bool IsQuit(){
+}
+
+void OpenRpcLog(){
+}
+
+void CloseRpcLog(){
+}
+
+static DynamicMessageFactory frrpc_func_s_message_factory_;
+google::protobuf::Message* CreateProtoMessage(const Descriptor* type){
+	return frrpc_func_s_message_factory_.GetPrototype(method_descriptor->input_type());
+}
+
+bool ParseBinary(const fr_public::BinaryMemory& binary, RpcMessage& rpc_message){
+	;
+}
 
 }// namespace frrpc{
+

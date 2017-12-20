@@ -20,12 +20,6 @@
 
 namespace frrpc{
 
-enum eLinkType{
-	eLinkType_Server = 0,
-	eLinkType_Gate,
-	eLinkType_MQ,
-	eLinkType_End
-}
 
 class ServerOption{
 	public:
@@ -79,14 +73,13 @@ class Server{
 		const ::google::protobuf::Service* GetServiceFromName(const std::string& service_name);
 		const ::google::protobuf::Message* CreateRequest(::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size);
 		::google::protobuf::Message* CreateResponse(::google::protobuf::MethodDescriptor* method_descriptor);
-		bool ParseBinary(const BinaryMemory& binary, RpcMessage& rpc_message, ::google::protobuf::Service* Service);
+		bool ParseBinary(const BinaryMemory& binary, RpcMessage& rpc_message, google::protobuf::Service* service);
 		/// }}}2
 	private:
 		NetLink* net_link_;
 		ServerOption option_;
 		std::map<std::string, ::google::protobu::Service*> name_2service_;
 		std::vector<std::thread> work_threads_;
-		DynamicMessageFactory message_factory_;
 		eCompressType compress_type_; 
 };
 /// Server }}}1

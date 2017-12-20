@@ -11,12 +11,19 @@
 
 #include "fr_public/pub_log.h"
 
+// typedef {{{2
 typedef uint32_t Port;
 typedef uint32_t Socket;
 typedef unsigned short Port;
 typedef unsigned char Byte;
 typedef uint16_t RpcMetaSize;
 typedef uint32_t RpcRequestSize;
+typedef uint64_t RpcRequestId;
+// }}}2
+
+// enum {{{2
+
+// }}}2
 
 // marco function. // {{{2
 #define BYTE_CONVERT_TO_TYPE_OFFSET(byte_ptr, type, offset) *(const type*)((const Byte*)byte_ptr + offset)

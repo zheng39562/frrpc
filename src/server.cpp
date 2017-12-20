@@ -96,8 +96,10 @@ bool Server::Init(ServerOption& option){  //{{{2
 	for(int index = 0; index < option.work_thread_num; ++index){
 		work_threads_.push_back(thread(
 			[&](){
+				Controller* cntl = new Controller();
+
 				RpcMessage* rpc_message = new RpcMessage();
-				Closure* done = NewPermanentCallback(*this, Server::ReleaseRpcResource, rpc_message);
+				Closure* done = new NewPermanentCallback(this, Server::ReleaseRpcResource, rpc_message);
 				if(rpc_message == NULL || done == NULL){ 
 					init_thread = false; 
 					DEBUG_E("Can not create closure.(Or operator of new has exception.)"); 
@@ -116,13 +118,14 @@ bool Server::Init(ServerOption& option){  //{{{2
 						BinaryMemoryPtr binary = message_queue.top();
 						message_queue.pop();
 
-						Service cur_service(NULL);
-						if(!ParseBinary(*binary, *rpc_message, cur_service)){
+						google::protobuf::Service* cur_service(NULL);
+						if(ParseBinary(*binary, *rpc_message, cur_service)){
+							cur_service->CallMethod(rpc_message.method_descriptor, cntl, rpc_message.request, rpc_message.response, done);
+						}
+						else{
 							DEBUG_E("Parse rpc message is failed.");
 							continue;
 						}
-
-						cur_service->CallMethod(rpc_message.method_descriptor, NULL, rpc_message.request, rpc_message.response, done);
 					}
 				}
 
@@ -184,7 +187,7 @@ void Server::ReleaseRpcResource(RpcMessage* rpc_message){ // {{{2
 	rpc_message->Clear();
 } // }}}2
 
-BinaryMemoryPtr Server::BuildBinaryFromResponse(Message* meta, Message* response){// {{{2
+BinaryMemoryPtr Server::BuildBinaryFromResponse(const Message* meta, const Message* response){// {{{2
 	if(meta == NULL || response == NULL){
 		return BinaryMemoryPtr();
 	}
@@ -237,7 +240,7 @@ bool Server::SendRpcMessage(RpcMeta meta, const BinaryMemoryPtr& binary){  // {{
 
 const ::google::protobuf::Message* Server::CreateRequest(::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size){ // {{{2
 	if(method_descriptor != NULL && buffer != NULL && size > 0){
-		Message* request = message_factory_.GetPrototype(method_descriptor->input_type());
+		Message* request = CreateProtoMessage(method_descriptor->input_type());
 		if(request != NULL){
 			if(!request.ParseFromString(string(buffer, size))){
 				DELETE_POINT_IF_NOT_NULL(request);
@@ -250,7 +253,7 @@ const ::google::protobuf::Message* Server::CreateRequest(::google::protobuf::Met
 
 ::google::protobuf::Message* Server::CreateResponse(::google::protobuf::MethodDescriptor* method_descriptor){ // {{{2
 	if(method_descriptor != NULL){
-		return message_factory_.GetPrototype(method_descriptor->output_type());
+		return CreateProtoMessage(method_descriptor->output_type());
 	}
 	return NULL;
 } // }}}2
@@ -263,7 +266,7 @@ const ::google::protobuf::Service* Server::GetServiceFromName(const std::string&
 	return NULL;
 } // }}}2
 
-bool Server::ParseBinary(const BinaryMemory& binary, RpcMessage& rpc_message, ::google::protobuf::Service* cur_service){ // {{{2
+bool Server::ParseBinary(const BinaryMemory& binary, RpcMessage& rpc_message, google::protobuf::Service* service){ // {{{2
 	rpc_message.Clear();
 
 	Socket socket = *(Socket*)binary.buffer();
@@ -276,28 +279,28 @@ bool Server::ParseBinary(const BinaryMemory& binary, RpcMessage& rpc_message, ::
 	uint32_t rpc_meta_body_offset_ = rpc_meta_head_offset_ + sizeof(RpcMetaSize);
 	RpcMetaSize rpc_meta_size = BYTE_CONVERT_TO_TYPE_OFFSET(binary.buffer(), RpcMetaSize, rpc_meta_head_offset_);
 
-	rpc_message->rpc_meta = new RpcMeta();
-	if(rpc_message->rpc_meta != NULL && !rpc_message->rpc_meta->ParseFromString(string((const char*)binary.buffer() + rpc_meta_body_offset_, rpc_meta_size))){
+	rpc_message.rpc_meta = new RpcMeta();
+	if(rpc_message.rpc_meta != NULL && !rpc_message.rpc_meta->ParseFromString(string((const char*)binary.buffer() + rpc_meta_body_offset_, rpc_meta_size))){
 		DEBUG_E("Parse rpc meta is failed. hex data [" << binary.print() << "]");
 		return false;
 	}
-	rpc_message->rpc_meta->mutable_rpc_response_meta()->add_sockets(socket);
+	rpc_message.rpc_meta->mutable_rpc_response_meta()->add_sockets(socket);
 
-	if(binary.size() != (sizeof(Socket) + rpc_meta_size + rpc_message->rpc_meta->rpc_request_meta().request_size())){
-		DEBUG_E("Binary size is not equal size of rpc.");
-		return false;
+	service = GetServiceFromName(rpc_message->rpc_meta->service_name);
+	if(service == NULL){
+		DEBUG_E("Can not find service. service name is [" << rpc_message->rpc_meta->service_name << "]");
+		continue;
 	}
 
-	cur_service = GetServiceFromName(rpc_message->rpc_meta->service_name);
-	if(cur_service == NULL){
-		DEBUG_E("Can not find service. service name is [" << rpc_message->rpc_meta->service_name << "]");
+	if(binary.size() != (sizeof(Socket) + rpc_meta_size + rpc_message.rpc_meta->rpc_request_meta().request_size())){
+		DEBUG_E("Binary size is not equal size of rpc.");
 		return false;
 	}
 
 	uint32_t rpc_request_body_offset = rpc_meta_body_offset_ + rpc_meta_size;
 
-	rpc_message.method_descriptor = cur_service->method(rpc_message->rpc_meta->method_index);
-	rpc_message.request = CreateRequest(rpc_message.method_descriptor, (const char*)binary.buffer() + rpc_request_body_offset, rpc_message->rpc_meta->body_size());
+	rpc_message.method_descriptor = service->method(rpc_message.rpc_meta->method_index);
+	rpc_message.request = CreateRequest(rpc_message.method_descriptor, (const char*)binary.buffer() + rpc_request_body_offset, rpc_message.rpc_meta->body_size());
 	rpc_message.response = CreateResponse(rpc_message.method_descriptor);
 
 	return rpc_message.IsCompleted();
