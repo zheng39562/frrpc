@@ -2,41 +2,18 @@ syntax = "proto3";
 
 package frrpc;
 
-enum eLinkType{
-	eLinkType_Server = 0;
-	eLinkType_Gate = 1;
-	eLinkType_MQ = 2;
-}
 
 enum eCompressType{
 	eCompressType_Invilad = 0;
 	eCompressType_Not = 1;
 }
 
-message LinkInfo_Server{
-	bool is_client_msg = 1;
-	int32 socket = 1;
-}
-
-message LinkInfo_Gate{
-	bool is_client_msg = 1;
-	uint32 gate_id = 2;
-	repeated uint32 socket = 3;
-}
-
-message LinkInfo_MQ{
-	bool is_client_msg = 1;
-	string mq_key = 1;
-}
 
 message RpcRequestMeta{
 	uint64 request_id = 1;
-	uint32 request_size = 2;
 }
 
 message RpcResponseMeta{
-	repeated int32 sockets = 1;
-	uint32 response_size = 2;
 }
 
 message RpcMeta{

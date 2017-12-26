@@ -8,7 +8,6 @@
 **********************************************************/
 #include "net_server.h"
 
-
 #include "fr_tcp/protocol.h"
 #include "fr_public/pub_memory.h"
 #include "fr_public/pub_tool.h"
@@ -16,50 +15,49 @@
 using namespace std;
 using namespace universal;
 
-NetServer::NetServer()
+RpcServer_Server::RpcServer_Server()
 	:server_(this),
-	 max_packet_size_(2048)
+	 link_id_2info_()
 { ; }
 
-NetServer::NetServer(const NetServer &ref)
+RpcServer_Server::RpcServer_Server(const RpcServer_Server &ref)
 	:server_(this)
 { ; }
 
-NetServer& NetServer::operator=(const NetServer &ref){
+RpcServer_Server& RpcServer_Server::operator=(const RpcServer_Server &ref){
 	return *this;
 }
 
-NetServer::~NetServer(){ 
+RpcServer_Server::~RpcServer_Server(){ 
 }
 
-bool NetServer::Start(const string &ip, Port port){
+bool RpcServer_Server::Start(const string &ip, Port port){
 	if(!server_->Start(ip.c_str(), port)){
-		DEBUG_I("监听失败");
+		DEBUG_E("Fail to start server");
 		return false;
 	}
-
-	DEBUG_I("启动端口监听 [" << ip << ":" << port << "]");
+	DEBUG_I("Listen [" << ip << ":" << port << "]");
 	return true;
 }
 
-bool NetServer::Stop(){
-	if(server_->Stop()){
-		DEBUG_I("停止server.");
-		return FrTcpLinker::stop();
+bool RpcServer_Server::Stop(){
+	if(!server_->Stop()){
+		DEBUG_E("Fail to stop server.");
 	}
-	return false;
+	DEBUG_I("stop server.");
+	return true;
 }
 
-bool NetServer::Disconnect(Socket socket){
+bool RpcServer_Server::Disconnect(Socket socket){
 	if(int(socket) < 0){
-		DEBUG_E("错误的socket uint值为[" << socket << "] int值为[" << (int)socket << "]");
+		DEBUG_E("socket must greater than zero.");
 		return false;
 	}
-	DEBUG_I("服务端主动断开 socket[" << socket << "]连接");
+	DEBUG_I("disconnect socket[" << socket << "]");
 	return server_->Disconnect(socket);
 }
 
-bool NetServer::Send(Socket socket, const BinaryMemory &binary){
+bool RpcServer_Server::Send(Socket socket, const BinaryMemory &binary){
 	if(socket <= 0){
 		DEBUG_E("socket is zero. Can not send data to socket of zero.");
 		return false;
@@ -93,10 +91,10 @@ bool NetServer::Send(Socket socket, const BinaryMemory &binary){
 	return true;
 }
 
-bool NetServer::SendGroup(const vector<Socket> &sockets, const BinaryMemory &binary){
+bool RpcServer_Server::SendGroup(const vector<Socket> &sockets, const BinaryMemory &binary){
 	bool bRet(true);
 	for(vector<Socket>::const_iterator citer = sockets.begin(); citer != sockets.end(); ++citer){
-		if(!NetServer::Send(*citer, binary)){
+		if(!RpcServer_Server::Send(*citer, binary)){
 			DEBUG_W("向[" << *citer << "]发送消息失败。请检查连接是否可用。");
 			bRet = false;
 		}
@@ -104,7 +102,7 @@ bool NetServer::SendGroup(const vector<Socket> &sockets, const BinaryMemory &bin
 	return bRet;
 }
 
-bool NetServer::GetRemoteAddress(Socket socket, std::string& ip, Port& port){
+bool RpcServer_Server::GetRemoteAddress(Socket socket, std::string& ip, Port& port){
 	char sAddress[20];
 	int iAddressLen = sizeof(sAddress) / sizeof(char);
 	if(server_->GetRemoteAddress(socket, sAddress, iAddressLen, port)){
@@ -114,12 +112,7 @@ bool NetServer::GetRemoteAddress(Socket socket, std::string& ip, Port& port){
 	return false;
 }
 
-int NetServer::OnConnect(Socket socket){ return 0; }
-int NetServer::OnDisconnect(Socket socket){ return 0; }
-int NetServer::OnSend(Socket socket){ return 0; }
-int NetServer::OnReceive(Socket socket, const universal::BinaryMemoryPtr &pBinary){ return 0; }
-
-EnHandleResult NetServer::OnPrepareListen(ITcpServer* pSender, SOCKET soListen){
+EnHandleResult RpcServer_Server::OnPrepareListen(ITcpServer* pSender, SOCKET soListen){
 	char sAddress[20];
 	int iAddressLen = sizeof(sAddress) / sizeof(char);
 	unsigned short port;
@@ -129,7 +122,7 @@ EnHandleResult NetServer::OnPrepareListen(ITcpServer* pSender, SOCKET soListen){
 	return HR_OK;
 }
 
-EnHandleResult NetServer::OnAccept(ITcpServer* pSender, Socket socket, SOCKET soClient){
+EnHandleResult RpcServer_Server::OnAccept(ITcpServer* pSender, Socket socket, SOCKET soClient){
 	char sAddress[20];
 	int iAddressLen = sizeof(sAddress) / sizeof(char);
 	unsigned short port;
@@ -141,12 +134,12 @@ EnHandleResult NetServer::OnAccept(ITcpServer* pSender, Socket socket, SOCKET so
 	return HR_OK;
 }
 
-EnHandleResult NetServer::OnSend(ITcpServer* pSender, Socket socket, const BYTE* pData, int iLength){
+EnHandleResult RpcServer_Server::OnSend(ITcpServer* pSender, Socket socket, const BYTE* pData, int iLength){
 	OnSend(socket);
 	return HR_OK;
 }
 
-EnHandleResult NetServer::OnReceive(ITcpServer* pSender, Socket socket, int iLength){
+EnHandleResult RpcServer_Server::OnReceive(ITcpServer* pSender, Socket socket, int iLength){
 	ITcpPullServer* pServer	= ITcpPullServer::FromS(pSender);
 	if(pServer != NULL){
 		uint32_t size(0); 
@@ -186,7 +179,7 @@ EnHandleResult NetServer::OnReceive(ITcpServer* pSender, Socket socket, int iLen
 	return HR_OK;
 }
 
-EnHandleResult NetServer::OnClose(ITcpServer* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode){
+EnHandleResult RpcServer_Server::OnClose(ITcpServer* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode){
 	char sAddress[20];
 	int iAddressLen = sizeof(sAddress) / sizeof(char);
 	unsigned short port;
@@ -197,7 +190,7 @@ EnHandleResult NetServer::OnClose(ITcpServer* pSender, Socket socket, EnSocketOp
 	return HR_OK;
 }
 
-EnHandleResult NetServer::OnShutdown(ITcpServer* pSender){
+EnHandleResult RpcServer_Server::OnShutdown(ITcpServer* pSender){
 	DEBUG_I("连接关闭");
 	return HR_OK;
 }

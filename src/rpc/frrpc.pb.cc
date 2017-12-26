@@ -118,7 +118,6 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::frrpc::RpcResponseMeta, send_socket_list_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::frrpc::RpcResponseMeta, response_size_),
   ~0u,  // no _has_bits_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::frrpc::RpcMeta, _internal_metadata_),
@@ -135,7 +134,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
 static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::frrpc::RpcRequestMeta)},
   { 7, -1, sizeof(::frrpc::RpcResponseMeta)},
-  { 14, -1, sizeof(::frrpc::RpcMeta)},
+  { 13, -1, sizeof(::frrpc::RpcMeta)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
@@ -167,20 +166,19 @@ void AddDescriptorsImpl() {
   InitDefaults();
   static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
       "\n\013frrpc.proto\022\005frrpc\":\n\016RpcRequestMeta\022\022"
-      "\n\nrequest_id\030\001 \001(\003\022\024\n\014request_size\030\002 \001(\r"
-      "\"B\n\017RpcResponseMeta\022\030\n\020send_socket_list\030"
-      "\001 \003(\005\022\025\n\rresponse_size\030\002 \001(\r\"\342\001\n\007RpcMeta"
-      "\022\023\n\013server_name\030\001 \001(\t\022\024\n\014method_index\030\002 "
-      "\001(\005\022/\n\020rpc_request_meta\030\003 \001(\0132\025.frrpc.Rp"
-      "cRequestMeta\0221\n\021rpc_response_meta\030\004 \001(\0132"
-      "\026.frrpc.RpcResponseMeta\022\033\n\023authenticatio"
-      "n_data\030\005 \001(\014\022+\n\rcompress_type\030\n \001(\0162\024.fr"
-      "rpc.eCompressType*A\n\reCompressType\022\031\n\025eC"
-      "ompressType_Invilad\020\000\022\025\n\021eCompressType_N"
-      "ot\020\001b\006proto3"
+      "\n\nrequest_id\030\001 \001(\004\022\024\n\014request_size\030\002 \001(\r"
+      "\"(\n\017RpcResponseMeta\022\025\n\rresponse_size\030\002 \001"
+      "(\r\"\342\001\n\007RpcMeta\022\023\n\013server_name\030\001 \001(\t\022\024\n\014m"
+      "ethod_index\030\002 \001(\005\022/\n\020rpc_request_meta\030\003 "
+      "\001(\0132\025.frrpc.RpcRequestMeta\0221\n\021rpc_respon"
+      "se_meta\030\004 \001(\0132\026.frrpc.RpcResponseMeta\022\033\n"
+      "\023authentication_data\030\005 \001(\014\022+\n\rcompress_t"
+      "ype\030\n \001(\0162\024.frrpc.eCompressType*A\n\reComp"
+      "ressType\022\031\n\025eCompressType_Invilad\020\000\022\025\n\021e"
+      "CompressType_Not\020\001b\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 452);
+      descriptor, 426);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "frrpc.proto", &protobuf_RegisterTypes);
 }
@@ -300,13 +298,13 @@ bool RpcRequestMeta::MergePartialFromCodedStream(
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // int64 request_id = 1;
+      // uint64 request_id = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
 
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   ::google::protobuf::int64, ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
                  input, &request_id_)));
         } else {
           goto handle_unusual;
@@ -354,9 +352,9 @@ void RpcRequestMeta::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // int64 request_id = 1;
+  // uint64 request_id = 1;
   if (this->request_id() != 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt64(1, this->request_id(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteUInt64(1, this->request_id(), output);
   }
 
   // uint32 request_size = 2;
@@ -378,9 +376,9 @@ void RpcRequestMeta::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // int64 request_id = 1;
+  // uint64 request_id = 1;
   if (this->request_id() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt64ToArray(1, this->request_id(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteUInt64ToArray(1, this->request_id(), target);
   }
 
   // uint32 request_size = 2;
@@ -405,10 +403,10 @@ size_t RpcRequestMeta::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
-  // int64 request_id = 1;
+  // uint64 request_id = 1;
   if (this->request_id() != 0) {
     total_size += 1 +
-      ::google::protobuf::internal::WireFormatLite::Int64Size(
+      ::google::protobuf::internal::WireFormatLite::UInt64Size(
         this->request_id());
   }
 
@@ -497,7 +495,6 @@ void RpcRequestMeta::InternalSwap(RpcRequestMeta* other) {
 void RpcResponseMeta::InitAsDefaultInstance() {
 }
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int RpcResponseMeta::kSendSocketListFieldNumber;
 const int RpcResponseMeta::kResponseSizeFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
@@ -512,7 +509,6 @@ RpcResponseMeta::RpcResponseMeta()
 RpcResponseMeta::RpcResponseMeta(const RpcResponseMeta& from)
   : ::google::protobuf::Message(),
       _internal_metadata_(NULL),
-      send_socket_list_(from.send_socket_list_),
       _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   response_size_ = from.response_size_;
@@ -561,7 +557,6 @@ void RpcResponseMeta::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  send_socket_list_.Clear();
   response_size_ = 0u;
   _internal_metadata_.Clear();
 }
@@ -576,25 +571,6 @@ bool RpcResponseMeta::MergePartialFromCodedStream(
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated int32 send_socket_list = 1;
-      case 1: {
-        if (static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPackedPrimitive<
-                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, this->mutable_send_socket_list())));
-        } else if (
-            static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
-          DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitiveNoInline<
-                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 1, 10u, input, this->mutable_send_socket_list())));
-        } else {
-          goto handle_unusual;
-        }
-        break;
-      }
-
       // uint32 response_size = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
@@ -635,17 +611,6 @@ void RpcResponseMeta::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated int32 send_socket_list = 1;
-  if (this->send_socket_list_size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteTag(1, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
-    output->WriteVarint32(static_cast< ::google::protobuf::uint32>(
-        _send_socket_list_cached_byte_size_));
-  }
-  for (int i = 0, n = this->send_socket_list_size(); i < n; i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32NoTag(
-      this->send_socket_list(i), output);
-  }
-
   // uint32 response_size = 2;
   if (this->response_size() != 0) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(2, this->response_size(), output);
@@ -664,19 +629,6 @@ void RpcResponseMeta::SerializeWithCachedSizes(
   // @@protoc_insertion_point(serialize_to_array_start:frrpc.RpcResponseMeta)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
-
-  // repeated int32 send_socket_list = 1;
-  if (this->send_socket_list_size() > 0) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteTagToArray(
-      1,
-      ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
-      target);
-    target = ::google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(
-        static_cast< ::google::protobuf::int32>(
-            _send_socket_list_cached_byte_size_), target);
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteInt32NoTagToArray(this->send_socket_list_, target);
-  }
 
   // uint32 response_size = 2;
   if (this->response_size() != 0) {
@@ -700,22 +652,6 @@ size_t RpcResponseMeta::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
-  // repeated int32 send_socket_list = 1;
-  {
-    size_t data_size = ::google::protobuf::internal::WireFormatLite::
-      Int32Size(this->send_socket_list_);
-    if (data_size > 0) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::Int32Size(
-            static_cast< ::google::protobuf::int32>(data_size));
-    }
-    int cached_size = ::google::protobuf::internal::ToCachedSize(data_size);
-    GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-    _send_socket_list_cached_byte_size_ = cached_size;
-    GOOGLE_SAFE_CONCURRENT_WRITES_END();
-    total_size += data_size;
-  }
-
   // uint32 response_size = 2;
   if (this->response_size() != 0) {
     total_size += 1 +
@@ -752,7 +688,6 @@ void RpcResponseMeta::MergeFrom(const RpcResponseMeta& from) {
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  send_socket_list_.MergeFrom(from.send_socket_list_);
   if (from.response_size() != 0) {
     set_response_size(from.response_size());
   }
@@ -782,7 +717,6 @@ void RpcResponseMeta::Swap(RpcResponseMeta* other) {
 }
 void RpcResponseMeta::InternalSwap(RpcResponseMeta* other) {
   using std::swap;
-  send_socket_list_.InternalSwap(&other->send_socket_list_);
   swap(response_size_, other->response_size_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_cached_size_, other->_cached_size_);

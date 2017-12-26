@@ -77,9 +77,17 @@ class Controller : public google::protobuf::RpcController{
 		//
 		// NotifyOnCancel() must be called no more than once per request.
 		virtual void NotifyOnCancel(Closure* callback);
+
+		// custom variables;
+		
+		// net_link_id
+		inline void set_link_id(LinkID link_id){ link_id_ = link_id; }
+		inline NetLinkId link_id()const{ return link_id_; };
+
 	private:
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Controller);
 	private:
+		NetLinkId net_link_id_;
 };
 
 }// namespace frrpc

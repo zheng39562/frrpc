@@ -19,6 +19,7 @@ typedef unsigned char Byte;
 typedef uint16_t RpcMetaSize;
 typedef uint32_t RpcRequestSize;
 typedef uint64_t RpcRequestId;
+typedef uint64_t LinkID;
 // }}}2
 
 // enum {{{2
@@ -34,6 +35,10 @@ typedef uint64_t RpcRequestId;
 
 // marco number {{{2
 #define RPC_REQUEST_ID_NULL 0
+#define RPC_LINK_ID_NULL 0
+// }}}2
+
+// common class {{{2
 // }}}2
 
 #endif 

@@ -173,11 +173,11 @@ class RpcRequestMeta : public ::google::protobuf::Message /* @@protoc_insertion_
 
   // accessors -------------------------------------------------------
 
-  // int64 request_id = 1;
+  // uint64 request_id = 1;
   void clear_request_id();
   static const int kRequestIdFieldNumber = 1;
-  ::google::protobuf::int64 request_id() const;
-  void set_request_id(::google::protobuf::int64 value);
+  ::google::protobuf::uint64 request_id() const;
+  void set_request_id(::google::protobuf::uint64 value);
 
   // uint32 request_size = 2;
   void clear_request_size();
@@ -189,7 +189,7 @@ class RpcRequestMeta : public ::google::protobuf::Message /* @@protoc_insertion_
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::int64 request_id_;
+  ::google::protobuf::uint64 request_id_;
   ::google::protobuf::uint32 request_size_;
   mutable int _cached_size_;
   friend struct ::protobuf_frrpc_2eproto::TableStruct;
@@ -279,18 +279,6 @@ class RpcResponseMeta : public ::google::protobuf::Message /* @@protoc_insertion
 
   // accessors -------------------------------------------------------
 
-  // repeated int32 send_socket_list = 1;
-  int send_socket_list_size() const;
-  void clear_send_socket_list();
-  static const int kSendSocketListFieldNumber = 1;
-  ::google::protobuf::int32 send_socket_list(int index) const;
-  void set_send_socket_list(int index, ::google::protobuf::int32 value);
-  void add_send_socket_list(::google::protobuf::int32 value);
-  const ::google::protobuf::RepeatedField< ::google::protobuf::int32 >&
-      send_socket_list() const;
-  ::google::protobuf::RepeatedField< ::google::protobuf::int32 >*
-      mutable_send_socket_list();
-
   // uint32 response_size = 2;
   void clear_response_size();
   static const int kResponseSizeFieldNumber = 2;
@@ -301,8 +289,6 @@ class RpcResponseMeta : public ::google::protobuf::Message /* @@protoc_insertion
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::RepeatedField< ::google::protobuf::int32 > send_socket_list_;
-  mutable int _send_socket_list_cached_byte_size_;
   ::google::protobuf::uint32 response_size_;
   mutable int _cached_size_;
   friend struct ::protobuf_frrpc_2eproto::TableStruct;
@@ -475,15 +461,15 @@ class RpcMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 #endif  // __GNUC__
 // RpcRequestMeta
 
-// int64 request_id = 1;
+// uint64 request_id = 1;
 inline void RpcRequestMeta::clear_request_id() {
-  request_id_ = GOOGLE_LONGLONG(0);
+  request_id_ = GOOGLE_ULONGLONG(0);
 }
-inline ::google::protobuf::int64 RpcRequestMeta::request_id() const {
+inline ::google::protobuf::uint64 RpcRequestMeta::request_id() const {
   // @@protoc_insertion_point(field_get:frrpc.RpcRequestMeta.request_id)
   return request_id_;
 }
-inline void RpcRequestMeta::set_request_id(::google::protobuf::int64 value) {
+inline void RpcRequestMeta::set_request_id(::google::protobuf::uint64 value) {
   
   request_id_ = value;
   // @@protoc_insertion_point(field_set:frrpc.RpcRequestMeta.request_id)
@@ -506,36 +492,6 @@ inline void RpcRequestMeta::set_request_size(::google::protobuf::uint32 value) {
 // -------------------------------------------------------------------
 
 // RpcResponseMeta
-
-// repeated int32 send_socket_list = 1;
-inline int RpcResponseMeta::send_socket_list_size() const {
-  return send_socket_list_.size();
-}
-inline void RpcResponseMeta::clear_send_socket_list() {
-  send_socket_list_.Clear();
-}
-inline ::google::protobuf::int32 RpcResponseMeta::send_socket_list(int index) const {
-  // @@protoc_insertion_point(field_get:frrpc.RpcResponseMeta.send_socket_list)
-  return send_socket_list_.Get(index);
-}
-inline void RpcResponseMeta::set_send_socket_list(int index, ::google::protobuf::int32 value) {
-  send_socket_list_.Set(index, value);
-  // @@protoc_insertion_point(field_set:frrpc.RpcResponseMeta.send_socket_list)
-}
-inline void RpcResponseMeta::add_send_socket_list(::google::protobuf::int32 value) {
-  send_socket_list_.Add(value);
-  // @@protoc_insertion_point(field_add:frrpc.RpcResponseMeta.send_socket_list)
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::int32 >&
-RpcResponseMeta::send_socket_list() const {
-  // @@protoc_insertion_point(field_list:frrpc.RpcResponseMeta.send_socket_list)
-  return send_socket_list_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::int32 >*
-RpcResponseMeta::mutable_send_socket_list() {
-  // @@protoc_insertion_point(field_mutable_list:frrpc.RpcResponseMeta.send_socket_list)
-  return &send_socket_list_;
-}
 
 // uint32 response_size = 2;
 inline void RpcResponseMeta::clear_response_size() {

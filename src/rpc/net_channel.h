@@ -12,10 +12,6 @@
 #include <mutex>
 #include <thread>
 
-// 职责：
-//	主动连接
-//	发送和接收数据包。保证数据包的完整性和正确性。
-// 基于HPSocket的client和server分离 无法公共继承。
 class FrTcpClient : public FrTcpLinker, public CTcpPullClientListener{
 	public:
 		FrTcpClient();

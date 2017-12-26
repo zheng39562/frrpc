@@ -1,4 +1,4 @@
-include ../make/config.mk
+include ../../make/config.mk
 
 PROJECT_NAME=frrpc
 PROJECT_OBJECTS= \
@@ -31,4 +31,5 @@ clean :
 
 proto : 
 	protoc --proto_path=./ --cpp_out=./ frrpc.proto	
+	protoc --proto_path=./ --cpp_out=./ net.proto	
 

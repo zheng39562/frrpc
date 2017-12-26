@@ -35,3 +35,13 @@
 	* 测试结构接收.
 	* 
 
+### undefined
+	* channel
+		* 针对link新结构的解析
+	* net_link
+		* link的完整功能
+	* net_server
+		* 所有实现
+	* net_channel
+		* 所有实现
+
