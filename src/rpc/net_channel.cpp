@@ -135,6 +135,20 @@ bool RpcChannel_Server::IsChannel()const{// {{{2
 	return true;
 }// }}}2
 
+bool RpcChannel_Server::SendHeart(LinkID link_id){// {{{2
+	NetInfo net_info;
+	net_info.set_net_type(eNetType_Heart);
+
+	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info_);
+	if(binary != NULL){
+		if(!net_client_->Send((const Byte*)binary->buffer(), binary->size())){
+			DEBUG_E("Fail to send binary.");
+			return false;
+		}
+	}
+	return true;
+}// }}}2
+
 } // namespace network
 } // namespace frrpc
 

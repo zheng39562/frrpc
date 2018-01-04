@@ -53,6 +53,7 @@ class RpcChannel_Server : public RpcBaseNet, public CTcpPullClientListener{
 		EnHandleResult ReturnError(const std::string& error_info);
 	private:
 		virtual bool IsChannel()const;
+		virtual bool SendHeart(LinkID link_id);
 	private:
 		CTcpPullClientPtr net_client_;
 		std::string ip_;
