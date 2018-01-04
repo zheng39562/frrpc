@@ -8,12 +8,20 @@
 **********************************************************/
 #include "frrpc_function.h"
 
+#include <google/protobuf/dynamic_message.h>
+
+using namespace std;
+using namespace fr_public;
+using namespace google::protobuf;
+
 namespace frrpc{
 
 bool RunUntilStop(){
+	return true;
 }
 
 bool IsQuit(){
+	return true;
 }
 
 void OpenRpcLog(){
@@ -22,14 +30,11 @@ void OpenRpcLog(){
 void CloseRpcLog(){
 }
 
-static DynamicMessageFactory frrpc_func_s_message_factory_;
-google::protobuf::Message* CreateProtoMessage(const Descriptor* type){
-	return frrpc_func_s_message_factory_.GetPrototype(method_descriptor->input_type());
+static google::protobuf::DynamicMessageFactory frrpc_func_s_message_factory_;
+google::protobuf::Message* CreateProtoMessage(const google::protobuf::Descriptor* type){
+	return frrpc_func_s_message_factory_.GetPrototype(type)->New();
 }
 
-bool ParseBinary(const fr_public::BinaryMemory& binary, RpcMessage& rpc_message){
-	;
-}
 
 }// namespace frrpc{
 

@@ -6,157 +6,135 @@
  * \version 
  * * \author zheng39562@163.com
 **********************************************************/
-#include "net_client.h"
-
-#include "fr_tcp/protocol.h"
+#include "net_channel.h"
 
 using namespace std;
-using namespace universal;
+using namespace fr_public;
+using namespace google::protobuf;
 
-FrTcpClient::FrTcpClient()
-	:FrTcpLinker(),
-	 m_pClient(this),
-	 m_Connect(false),
-	 max_packet_size_(2048),
-	 mutex_(),
-	 socket_(-1)
-{ ; }
+namespace frrpc{
+namespace network{
 
-FrTcpClient::FrTcpClient(const std::string &_ip, int _port)
-	:FrTcpLinker(_ip, _port),
-	 m_pClient(this),
-	 m_Connect(false),
-	 max_packet_size_(2048),
-	 mutex_()
-{ ; }
+RpcChannel_Server::RpcChannel_Server(const std::string &ip, Port port)// {{{2
+	:net_client_(this),
+	 ip_(ip),
+	 port_(port),
+	 net_info_()
+{
+	net_info_.set_net_type(eNetType_Server);
+}// }}}2
 
-FrTcpClient::~FrTcpClient(){
-}
+RpcChannel_Server::~RpcChannel_Server(){// {{{2
+	;
+}// }}}2
 
-bool FrTcpClient::Start(const string &ip, int port){
-	bool bAsynConn(false);
-	if(!m_pClient->Start(ip.c_str(), port, bAsynConn)){
-		DEBUG_E("连接失败[" << ip << ":" << port << "]");
+bool RpcChannel_Server::Start(){// {{{2
+	if(!net_client_->Start(ip_.c_str(), port_)){
+		DEBUG_E("Fail to start. ip[" << ip_ << "] port[" << port_ << "]");
 		return false;
 	}
 	return true;
-}
+}// }}}2
 
-bool FrTcpClient::Stop(){
-	return m_pClient->Stop();
-}
+bool RpcChannel_Server::Stop(){// {{{2
+	return net_client_->Stop();
+}// }}}2
 
-bool FrTcpClient::Disconnect(Socket socket){
-	return Stop();
-}
-
-bool FrTcpClient::Send(Socket socket, const BinaryMemory &binary){
-	if(isConnect() && !binary.empty() && binary.size() <= m_pClient->GetSocketBufferSize()){
-		std::lock_guard<std::mutex> localLock(mutex_);
-		Byte pHead[PROTO_HEAD_SIZE] = {0};
-		if(GetHead(pHead, binary) && m_pClient->Send(pHead, 3)){
-			int offset(0);
-			int curSize(0);
-			while(offset < binary.size()){
-				curSize = (binary.size() - offset) > max_packet_size_ ? max_packet_size_ : (binary.size() - offset);
-				if(m_pClient->Send((const Byte*)binary.buffer(), curSize, offset)){
-					offset += max_packet_size_;
-				}
-				else{
-					DEBUG_E("发送包失败。打包之前的长度" << binary.size() << "包长度为" << binary.size() << " 数据包头的命令号为 [" << *(short*)binary.buffer() << "]");
-					return false;
-				}
-			}
-		}
-		else{
-			DEBUG_E("发送包头失败,请检查链接是否已经断开.");
-			return false;
-		}
-	}
-	else{
-		DEBUG_I("丢弃包,包长度[" << binary.size() << "].");
-		return false;
-	}
-	return true;
-}
-
-bool FrTcpClient::SendGroup(const vector<Socket>& socket, const BinaryMemory& binary){
-	return Send(0, binary);
-}
-
-bool GetRemoteAddress(Socket socket, std::string& ip, Port& port){
+bool RpcChannel_Server::Disconnect(LinkID link_id){// {{{2
 	return false;
-}
+}// }}}2
 
-int FrTcpClient::OnConnect(Socket socket){ return 0; }
-int FrTcpClient::OnDisconnect(Socket socket){ return 0; }
-int FrTcpClient::OnSend(Socket socket){ return 0; }
-int FrTcpClient::OnReceive(Socket socket, const universal::BinaryMemoryPtr &pBinary){ return 0; }
+bool RpcChannel_Server::Send(const RpcMeta& meta, const Message& body){// {{{2
+	bool ret(false);
 
-EnHandleResult FrTcpClient::OnConnect(ITcpClient* pSender, Socket socket){
-	char sAddress[20];
-	int iAddressLen = sizeof(sAddress) / sizeof(char);
-	unsigned short port;
+	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info_, meta, body);
+	if(binary != NULL){
+		ret = net_client_->Send((const Byte*)binary->buffer(), binary->size());
+		if(!ret){
+			DEBUG_E("Fail to send binary.");
+		}
+	}
+	return ret;
+}// }}}2
 
-	pSender->GetRemoteHost(sAddress, iAddressLen, port);
-	DEBUG_I("连接服务器成功。 [" << string(sAddress, iAddressLen - 1) << ":" << port << "]");
+bool RpcChannel_Server::Send(LinkID link_id, const RpcMeta& meta, const Message& body){// {{{2
+	return false;
+}// }}}2
 
-	m_Connect = true;
-	socket_ = socket;
-	OnConnect(socket);
+bool RpcChannel_Server::Send(const vector<LinkID>& link_ids, const RpcMeta& meta, const Message& body){// {{{2
+	return false;
+}// }}}2
+
+bool RpcChannel_Server::GetRemoteAddress(LinkID link_id, std::string& ip, Port& port){// {{{2
+	ip = ip_;
+	port = port_;
+	return true;
+}// }}}2
+
+EnHandleResult RpcChannel_Server::OnConnect(ITcpClient* pSender, Socket socket){// {{{2
 	return HR_OK;
-}
+}// }}}2
 
-EnHandleResult FrTcpClient::OnSend(ITcpClient* pSender, Socket socket, const BYTE* pData, int iLength){
-	OnSend(socket);
+EnHandleResult RpcChannel_Server::OnSend(ITcpClient* pSender, Socket socket, const BYTE* pData, int iLength){// {{{2
 	return HR_OK;
-}
+}// }}}2
 
-EnHandleResult FrTcpClient::OnReceive(ITcpClient* pSender, Socket socket, int iLength){
-	ITcpPullClient* pClient	= ITcpPullClient::FromS(pSender);
-	if(pClient != NULL){
-		uint32_t size(0);
-		while(iLength > 0 && iLength >= sizeof(size) && HR_OK == pClient->Peek((Byte*)&size, sizeof(size))){
-			if(size >= m_pClient->GetSocketBufferSize()){
-				stop(); 
-				DEBUG_E("尺寸大小TCP缓存 自动断开连接.");
-				return HR_ERROR;
+EnHandleResult RpcChannel_Server::OnReceive(ITcpClient* pSender, Socket socket, int iLength){// {{{2
+	ITcpPullClient* client = ITcpPullClient::FromS(pSender);
+
+	if(client != NULL){
+		uint32_t size(0); 
+		while(iLength > 0 && iLength >= sizeof(uint32_t) && FR_OK == client->Peek((Byte*)&size, sizeof(size))){
+			if((size + sizeof(size)) > (uint32_t)iLength){ break; }
+
+			if(size >= NET_PACKET_MAX_SIZE){ return ReturnError("net_type_size is bigger than buffer. Please reset buffer size(recompile)."); }
+			if(size == 0){ return ReturnError("size is zero."); }
+			if(FR_OK != client->Fetch((Byte*)&size, sizeof(size))){ return ReturnError("Fail to fetch head."); }
+
+			BinaryMemory binary;
+			binary.reserve(size);
+			if(FR_OK != client->Fetch((Byte*)binary.CopyMemoryFromOut(size), size)){ 
+				return ReturnError("Fail to fetch body."); 
 			}
 
-			if((size + sizeof(size)) <= (uint32_t)iLength){
-				if(HR_OK == pClient->Fetch((Byte*)&size, sizeof(size))){
-					iLength -= sizeof(size);
+			iLength -= (size + sizeof(size));
+
+			NetInfo net_info;
+			RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
+			if(packet != NULL){
+				if(!GetMessageFromBinary(binary, net_info, packet)){
+					return ReturnError("Error : GetMessageFromBinary.");
 				}
 
-				BinaryMemoryPtr binary(new BinaryMemory());
-				binary->resize(size);
-				if(HR_OK == pClient->Fetch((Byte*)binary->buffer(), size)){
-					iLength -= size;
-
-					PushMessageToQueue(binary);
+				if(net_info.net_type() == net_info_.net_type()){
+					PushMessageToQueue(packet);
 				}
 				else{
-					return HR_ERROR;
+					return ReturnError("net type is wrong.");
 				}
 			}
 			else{
-				break;
+				DEBUG_E("Fail to new packet.");
+				return HR_ERROR;
 			}
 		}
 	}
 	return HR_OK;
-}
+}// }}}2
 
-EnHandleResult FrTcpClient::OnClose(ITcpClient* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode){
-	char sAddress[20];
-	int iAddressLen = sizeof(sAddress) / sizeof(char);
-	unsigned short port;
-
-	pSender->GetRemoteHost(sAddress, iAddressLen, port);
-	DEBUG_I("客户端[" << string(sAddress, iAddressLen - 1) << ":" << port << "]连接断开 HPScoket errorCode [" << iErrorCode << "]");
-
-	m_Connect = false;
-	OnDisconnect(socket);
+EnHandleResult RpcChannel_Server::OnClose(ITcpClient* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode){// {{{2
 	return HR_OK;
-}
+}// }}}2
+
+EnHandleResult RpcChannel_Server::ReturnError(const std::string& error_info){// {{{2
+	DEBUG_E(error_info);
+	Stop();
+}// }}}2
+
+bool RpcChannel_Server::IsChannel()const{// {{{2
+	return true;
+}// }}}2
+
+} // namespace network
+} // namespace frrpc
 

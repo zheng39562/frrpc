@@ -17,7 +17,7 @@ message RpcResponseMeta{
 }
 
 message RpcMeta{
-	string server_name = 1;
+	string service_name = 1;
 	int32 method_index = 2;
 	RpcRequestMeta rpc_request_meta = 3;
 	RpcResponseMeta rpc_response_meta = 4;

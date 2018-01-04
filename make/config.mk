@@ -1,11 +1,13 @@
-COMMON_LIBRARY=-luuid -pthread -lrt -ldl 
-COMMON_INCLUDE=-I../ -I/usr/include/brpc/
+COMMON_LIBRARY=-luuid -pthread -lrt -ldl \
+			   -lboost_filesystem -lboost_regex \
+			   -lfr_public -lfr_sql -lmysqlcppconn \
+			   -lprotobuf  
+COMMON_LIBRARY_PATH=-L/usr/
+COMMON_INCLUDE=-I../
 COMMON_MACRO=-D__LINUX
 #COMMON_OPTION=-Wl,--no-as-needed
 COMMON_CFLAGS=-g -std=c++11 -fPIC
 COMMON_CXX=g++
-
-PUBLIC_COMMON_LIBRARY=-lboost_filesystem -lboost_regex -lfr_public -lmysqlcppconn -lfr_sql -lprotobuf -lbrpc
 
 BUILD_LIBRARY_PATH=../../build/lib
 BUILD_INCLUDE_PATH=../../build/include

@@ -179,18 +179,11 @@ class RpcRequestMeta : public ::google::protobuf::Message /* @@protoc_insertion_
   ::google::protobuf::uint64 request_id() const;
   void set_request_id(::google::protobuf::uint64 value);
 
-  // uint32 request_size = 2;
-  void clear_request_size();
-  static const int kRequestSizeFieldNumber = 2;
-  ::google::protobuf::uint32 request_size() const;
-  void set_request_size(::google::protobuf::uint32 value);
-
   // @@protoc_insertion_point(class_scope:frrpc.RpcRequestMeta)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::uint64 request_id_;
-  ::google::protobuf::uint32 request_size_;
   mutable int _cached_size_;
   friend struct ::protobuf_frrpc_2eproto::TableStruct;
   friend void ::protobuf_frrpc_2eproto::InitDefaultsRpcRequestMetaImpl();
@@ -279,17 +272,10 @@ class RpcResponseMeta : public ::google::protobuf::Message /* @@protoc_insertion
 
   // accessors -------------------------------------------------------
 
-  // uint32 response_size = 2;
-  void clear_response_size();
-  static const int kResponseSizeFieldNumber = 2;
-  ::google::protobuf::uint32 response_size() const;
-  void set_response_size(::google::protobuf::uint32 value);
-
   // @@protoc_insertion_point(class_scope:frrpc.RpcResponseMeta)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::uint32 response_size_;
   mutable int _cached_size_;
   friend struct ::protobuf_frrpc_2eproto::TableStruct;
   friend void ::protobuf_frrpc_2eproto::InitDefaultsRpcResponseMetaImpl();
@@ -378,19 +364,19 @@ class RpcMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 
   // accessors -------------------------------------------------------
 
-  // string server_name = 1;
-  void clear_server_name();
-  static const int kServerNameFieldNumber = 1;
-  const ::std::string& server_name() const;
-  void set_server_name(const ::std::string& value);
+  // string service_name = 1;
+  void clear_service_name();
+  static const int kServiceNameFieldNumber = 1;
+  const ::std::string& service_name() const;
+  void set_service_name(const ::std::string& value);
   #if LANG_CXX11
-  void set_server_name(::std::string&& value);
+  void set_service_name(::std::string&& value);
   #endif
-  void set_server_name(const char* value);
-  void set_server_name(const char* value, size_t size);
-  ::std::string* mutable_server_name();
-  ::std::string* release_server_name();
-  void set_allocated_server_name(::std::string* server_name);
+  void set_service_name(const char* value);
+  void set_service_name(const char* value, size_t size);
+  ::std::string* mutable_service_name();
+  ::std::string* release_service_name();
+  void set_allocated_service_name(::std::string* service_name);
 
   // bytes authentication_data = 5;
   void clear_authentication_data();
@@ -440,7 +426,7 @@ class RpcMeta : public ::google::protobuf::Message /* @@protoc_insertion_point(c
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::internal::ArenaStringPtr server_name_;
+  ::google::protobuf::internal::ArenaStringPtr service_name_;
   ::google::protobuf::internal::ArenaStringPtr authentication_data_;
   ::frrpc::RpcRequestMeta* rpc_request_meta_;
   ::frrpc::RpcResponseMeta* rpc_response_meta_;
@@ -475,93 +461,65 @@ inline void RpcRequestMeta::set_request_id(::google::protobuf::uint64 value) {
   // @@protoc_insertion_point(field_set:frrpc.RpcRequestMeta.request_id)
 }
 
-// uint32 request_size = 2;
-inline void RpcRequestMeta::clear_request_size() {
-  request_size_ = 0u;
-}
-inline ::google::protobuf::uint32 RpcRequestMeta::request_size() const {
-  // @@protoc_insertion_point(field_get:frrpc.RpcRequestMeta.request_size)
-  return request_size_;
-}
-inline void RpcRequestMeta::set_request_size(::google::protobuf::uint32 value) {
-  
-  request_size_ = value;
-  // @@protoc_insertion_point(field_set:frrpc.RpcRequestMeta.request_size)
-}
-
 // -------------------------------------------------------------------
 
 // RpcResponseMeta
-
-// uint32 response_size = 2;
-inline void RpcResponseMeta::clear_response_size() {
-  response_size_ = 0u;
-}
-inline ::google::protobuf::uint32 RpcResponseMeta::response_size() const {
-  // @@protoc_insertion_point(field_get:frrpc.RpcResponseMeta.response_size)
-  return response_size_;
-}
-inline void RpcResponseMeta::set_response_size(::google::protobuf::uint32 value) {
-  
-  response_size_ = value;
-  // @@protoc_insertion_point(field_set:frrpc.RpcResponseMeta.response_size)
-}
 
 // -------------------------------------------------------------------
 
 // RpcMeta
 
-// string server_name = 1;
-inline void RpcMeta::clear_server_name() {
-  server_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+// string service_name = 1;
+inline void RpcMeta::clear_service_name() {
+  service_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& RpcMeta::server_name() const {
-  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.server_name)
-  return server_name_.GetNoArena();
+inline const ::std::string& RpcMeta::service_name() const {
+  // @@protoc_insertion_point(field_get:frrpc.RpcMeta.service_name)
+  return service_name_.GetNoArena();
 }
-inline void RpcMeta::set_server_name(const ::std::string& value) {
+inline void RpcMeta::set_service_name(const ::std::string& value) {
   
-  server_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:frrpc.RpcMeta.server_name)
+  service_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:frrpc.RpcMeta.service_name)
 }
 #if LANG_CXX11
-inline void RpcMeta::set_server_name(::std::string&& value) {
+inline void RpcMeta::set_service_name(::std::string&& value) {
   
-  server_name_.SetNoArena(
+  service_name_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:frrpc.RpcMeta.server_name)
+  // @@protoc_insertion_point(field_set_rvalue:frrpc.RpcMeta.service_name)
 }
 #endif
-inline void RpcMeta::set_server_name(const char* value) {
+inline void RpcMeta::set_service_name(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
-  server_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:frrpc.RpcMeta.server_name)
+  service_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:frrpc.RpcMeta.service_name)
 }
-inline void RpcMeta::set_server_name(const char* value, size_t size) {
+inline void RpcMeta::set_service_name(const char* value, size_t size) {
   
-  server_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+  service_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:frrpc.RpcMeta.server_name)
+  // @@protoc_insertion_point(field_set_pointer:frrpc.RpcMeta.service_name)
 }
-inline ::std::string* RpcMeta::mutable_server_name() {
+inline ::std::string* RpcMeta::mutable_service_name() {
   
-  // @@protoc_insertion_point(field_mutable:frrpc.RpcMeta.server_name)
-  return server_name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  // @@protoc_insertion_point(field_mutable:frrpc.RpcMeta.service_name)
+  return service_name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* RpcMeta::release_server_name() {
-  // @@protoc_insertion_point(field_release:frrpc.RpcMeta.server_name)
+inline ::std::string* RpcMeta::release_service_name() {
+  // @@protoc_insertion_point(field_release:frrpc.RpcMeta.service_name)
   
-  return server_name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  return service_name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void RpcMeta::set_allocated_server_name(::std::string* server_name) {
-  if (server_name != NULL) {
+inline void RpcMeta::set_allocated_service_name(::std::string* service_name) {
+  if (service_name != NULL) {
     
   } else {
     
   }
-  server_name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), server_name);
-  // @@protoc_insertion_point(field_set_allocated:frrpc.RpcMeta.server_name)
+  service_name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), service_name);
+  // @@protoc_insertion_point(field_set_allocated:frrpc.RpcMeta.service_name)
 }
 
 // int32 method_index = 2;

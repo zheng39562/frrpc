@@ -9,41 +9,66 @@
 #ifndef _net_client_H
 #define _net_client_H
 
-#include <mutex>
 #include <thread>
+#include <mutex>
+#include <math.h>
 
-class FrTcpClient : public FrTcpLinker, public CTcpPullClientListener{
-	public:
-		FrTcpClient();
-		FrTcpClient(const FrTcpClient& ref)=delete;
-		FrTcpClient& operator=(const FrTcpClient& ref)=delete;
-		~FrTcpClient();
-	public:
-		virtual bool Start(const std::string& ip, Port port)=0;
-		virtual void Stop()=0;
-		virtual bool Disconnect(Socket socket);
+#include "rpc_base_net.h"
+#include "frrpc_define.h"
 
-		virtual bool Send(Socket socket, const BinaryMemory& binary)=0;
-		virtual bool SendGroup(const vector<Socket>& socket, const BinaryMemory& binary)=0;
-		virtual bool GetRemoteAddress(Socket socket, std::string& ip, Port& port)=0;
-	protected:
-		virtual int OnConnect(Socket socket);
-		virtual int OnDisconnect(Socket socket);
-		virtual int OnSend(Socket socket);
-		virtual int OnReceive(Socket socket, const universal::BinaryMemoryPtr &pBinary);
+namespace frrpc{
+namespace network{
+
+// class RpcChannel_Server {{{1
+
+class RpcChannel_Server : public RpcBaseNet, public CTcpPullClientListener{
+	public:
+		RpcChannel_Server(const std::string &ip, Port port);
+		RpcChannel_Server(const RpcChannel_Server &ref)=delete;
+		RpcChannel_Server& operator=(const RpcChannel_Server &ref)=delete;
+		virtual ~RpcChannel_Server();
+	public:
+		virtual bool Start();
+		virtual bool Stop();
+
+		// client does not need it.
+		// If you want disconnect you can call Stop;
+		virtual bool Disconnect(LinkID link_id);
+
+		// hpsocket version has a bug : Send big data by multiple thread to the same socket.It does not ensure data order . 
+		// Big that means : GetSocketBufferSize()
+		// TODO:
+		//	Will Changes library of network.
+		virtual bool Send(const RpcMeta& meta, const google::protobuf::Message& body);
+		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
+		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
+
+		virtual bool GetRemoteAddress(LinkID link_id, std::string& ip, Port& port);
 	private:
-		// 回调函数都是基于HPSocket的，具体机制请查看HPSocket文档。
 		virtual EnHandleResult OnConnect(ITcpClient* pSender, Socket socket);
 		virtual EnHandleResult OnSend(ITcpClient* pSender, Socket socket, const BYTE* pData, int iLength);
 		virtual EnHandleResult OnReceive(ITcpClient* pSender, Socket socket, int iLength);
 		virtual EnHandleResult OnClose(ITcpClient* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode);
+
+		EnHandleResult ReturnError(const std::string& error_info);
 	private:
-		CTcpPullClientPtr m_pClient;
-		bool m_Connect;
-		int max_packet_size_;
-		std::mutex mutex_;
-		Socket socket_;
+		virtual bool IsChannel()const;
+	private:
+		CTcpPullClientPtr net_client_;
+		std::string ip_;
+		Port port_;
+		NetInfo net_info_;
 };
+// }}}1
+
+// class RpcChannel_Gate {{{1
+
+typedef RpcChannel_Server RpcChannel_Gate;
+
+// }}}1
+
+} // namespace network
+} // namespace frrpc
 
 #endif 
 

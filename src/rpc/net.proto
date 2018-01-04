@@ -6,10 +6,15 @@ enum eNetType{
 	eNetType_Server = 0;
 	eNetType_Gate = 1;
 	eNetType_MQ = 2;
+
+	eNetType_Special = 0xEF;
+	eNetType_Heart = 0xFF;
 }
 
 // different nettype use different field.
 message NetInfo{
-	repeated uint32 sockets = 1;	// Server and Gate;
+	eNetType net_type = 1;
+	repeated uint32 sockets = 2;	// Server and Gate;
+	bytes asbb = 3;
 }
 

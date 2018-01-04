@@ -63,12 +63,14 @@ enum eNetType {
   eNetType_Server = 0,
   eNetType_Gate = 1,
   eNetType_MQ = 2,
+  eNetType_Special = 239,
+  eNetType_Heart = 255,
   eNetType_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
   eNetType_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
 };
 bool eNetType_IsValid(int value);
 const eNetType eNetType_MIN = eNetType_Server;
-const eNetType eNetType_MAX = eNetType_MQ;
+const eNetType eNetType_MAX = eNetType_Heart;
 const int eNetType_ARRAYSIZE = eNetType_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* eNetType_descriptor();
@@ -165,10 +167,10 @@ class NetInfo : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 
   // accessors -------------------------------------------------------
 
-  // repeated uint32 sockets = 1;
+  // repeated uint32 sockets = 2;
   int sockets_size() const;
   void clear_sockets();
-  static const int kSocketsFieldNumber = 1;
+  static const int kSocketsFieldNumber = 2;
   ::google::protobuf::uint32 sockets(int index) const;
   void set_sockets(int index, ::google::protobuf::uint32 value);
   void add_sockets(::google::protobuf::uint32 value);
@@ -177,12 +179,34 @@ class NetInfo : public ::google::protobuf::Message /* @@protoc_insertion_point(c
   ::google::protobuf::RepeatedField< ::google::protobuf::uint32 >*
       mutable_sockets();
 
+  // bytes asbb = 3;
+  void clear_asbb();
+  static const int kAsbbFieldNumber = 3;
+  const ::std::string& asbb() const;
+  void set_asbb(const ::std::string& value);
+  #if LANG_CXX11
+  void set_asbb(::std::string&& value);
+  #endif
+  void set_asbb(const char* value);
+  void set_asbb(const void* value, size_t size);
+  ::std::string* mutable_asbb();
+  ::std::string* release_asbb();
+  void set_allocated_asbb(::std::string* asbb);
+
+  // .frrpc.network.eNetType net_type = 1;
+  void clear_net_type();
+  static const int kNetTypeFieldNumber = 1;
+  ::frrpc::network::eNetType net_type() const;
+  void set_net_type(::frrpc::network::eNetType value);
+
   // @@protoc_insertion_point(class_scope:frrpc.network.NetInfo)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint32 > sockets_;
   mutable int _sockets_cached_byte_size_;
+  ::google::protobuf::internal::ArenaStringPtr asbb_;
+  int net_type_;
   mutable int _cached_size_;
   friend struct ::protobuf_net_2eproto::TableStruct;
   friend void ::protobuf_net_2eproto::InitDefaultsNetInfoImpl();
@@ -198,7 +222,21 @@ class NetInfo : public ::google::protobuf::Message /* @@protoc_insertion_point(c
 #endif  // __GNUC__
 // NetInfo
 
-// repeated uint32 sockets = 1;
+// .frrpc.network.eNetType net_type = 1;
+inline void NetInfo::clear_net_type() {
+  net_type_ = 0;
+}
+inline ::frrpc::network::eNetType NetInfo::net_type() const {
+  // @@protoc_insertion_point(field_get:frrpc.network.NetInfo.net_type)
+  return static_cast< ::frrpc::network::eNetType >(net_type_);
+}
+inline void NetInfo::set_net_type(::frrpc::network::eNetType value) {
+  
+  net_type_ = value;
+  // @@protoc_insertion_point(field_set:frrpc.network.NetInfo.net_type)
+}
+
+// repeated uint32 sockets = 2;
 inline int NetInfo::sockets_size() const {
   return sockets_.size();
 }
@@ -226,6 +264,59 @@ inline ::google::protobuf::RepeatedField< ::google::protobuf::uint32 >*
 NetInfo::mutable_sockets() {
   // @@protoc_insertion_point(field_mutable_list:frrpc.network.NetInfo.sockets)
   return &sockets_;
+}
+
+// bytes asbb = 3;
+inline void NetInfo::clear_asbb() {
+  asbb_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& NetInfo::asbb() const {
+  // @@protoc_insertion_point(field_get:frrpc.network.NetInfo.asbb)
+  return asbb_.GetNoArena();
+}
+inline void NetInfo::set_asbb(const ::std::string& value) {
+  
+  asbb_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:frrpc.network.NetInfo.asbb)
+}
+#if LANG_CXX11
+inline void NetInfo::set_asbb(::std::string&& value) {
+  
+  asbb_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:frrpc.network.NetInfo.asbb)
+}
+#endif
+inline void NetInfo::set_asbb(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  asbb_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:frrpc.network.NetInfo.asbb)
+}
+inline void NetInfo::set_asbb(const void* value, size_t size) {
+  
+  asbb_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:frrpc.network.NetInfo.asbb)
+}
+inline ::std::string* NetInfo::mutable_asbb() {
+  
+  // @@protoc_insertion_point(field_mutable:frrpc.network.NetInfo.asbb)
+  return asbb_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* NetInfo::release_asbb() {
+  // @@protoc_insertion_point(field_release:frrpc.network.NetInfo.asbb)
+  
+  return asbb_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void NetInfo::set_allocated_asbb(::std::string* asbb) {
+  if (asbb != NULL) {
+    
+  } else {
+    
+  }
+  asbb_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), asbb);
+  // @@protoc_insertion_point(field_set_allocated:frrpc.network.NetInfo.asbb)
 }
 
 #ifdef __GNUC__

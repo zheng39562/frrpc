@@ -30,18 +30,10 @@
 		* 或者在基础上加锁，或者自己写一个net 在底层加锁.
 	* Controlller未实现.
 
-#### list
-	* 连通性测试.
-	* 测试结构接收.
-	* 
+### 零散记录
+	* Channel 也先带上netInfo结构
+		* 没有几个字节
+		* 方便后续扩展netinfo(in channel.)
 
-### undefined
-	* channel
-		* 针对link新结构的解析
-	* net_link
-		* link的完整功能
-	* net_server
-		* 所有实现
-	* net_channel
-		* 所有实现
-
+	* frvim 
+		* cs link 还存在bug。有时候会连接很多个。

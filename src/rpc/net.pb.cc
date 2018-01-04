@@ -59,7 +59,9 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::frrpc::network::NetInfo, net_type_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::frrpc::network::NetInfo, sockets_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::frrpc::network::NetInfo, asbb_),
 };
 static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::frrpc::network::NetInfo)},
@@ -91,13 +93,15 @@ void protobuf_RegisterTypes(const ::std::string&) {
 void AddDescriptorsImpl() {
   InitDefaults();
   static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-      "\n\tnet.proto\022\rfrrpc.network\"\032\n\007NetInfo\022\017\n"
-      "\007sockets\030\001 \003(\r*C\n\010eNetType\022\023\n\017eNetType_S"
-      "erver\020\000\022\021\n\reNetType_Gate\020\001\022\017\n\013eNetType_M"
-      "Q\020\002b\006proto3"
+      "\n\tnet.proto\022\rfrrpc.network\"S\n\007NetInfo\022)\n"
+      "\010net_type\030\001 \001(\0162\027.frrpc.network.eNetType"
+      "\022\017\n\007sockets\030\002 \003(\r\022\014\n\004asbb\030\003 \001(\014*o\n\010eNetT"
+      "ype\022\023\n\017eNetType_Server\020\000\022\021\n\reNetType_Gat"
+      "e\020\001\022\017\n\013eNetType_MQ\020\002\022\025\n\020eNetType_Special"
+      "\020\357\001\022\023\n\016eNetType_Heart\020\377\001b\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 131);
+      descriptor, 232);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "net.proto", &protobuf_RegisterTypes);
 }
@@ -124,6 +128,8 @@ bool eNetType_IsValid(int value) {
     case 0:
     case 1:
     case 2:
+    case 239:
+    case 255:
       return true;
     default:
       return false;
@@ -136,7 +142,9 @@ bool eNetType_IsValid(int value) {
 void NetInfo::InitAsDefaultInstance() {
 }
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
+const int NetInfo::kNetTypeFieldNumber;
 const int NetInfo::kSocketsFieldNumber;
+const int NetInfo::kAsbbFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 NetInfo::NetInfo()
@@ -153,10 +161,17 @@ NetInfo::NetInfo(const NetInfo& from)
       sockets_(from.sockets_),
       _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
+  asbb_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  if (from.asbb().size() > 0) {
+    asbb_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.asbb_);
+  }
+  net_type_ = from.net_type_;
   // @@protoc_insertion_point(copy_constructor:frrpc.network.NetInfo)
 }
 
 void NetInfo::SharedCtor() {
+  asbb_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  net_type_ = 0;
   _cached_size_ = 0;
 }
 
@@ -166,6 +181,7 @@ NetInfo::~NetInfo() {
 }
 
 void NetInfo::SharedDtor() {
+  asbb_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 
 void NetInfo::SetCachedSize(int size) const {
@@ -198,6 +214,8 @@ void NetInfo::Clear() {
   (void) cached_has_bits;
 
   sockets_.Clear();
+  asbb_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  net_type_ = 0;
   _internal_metadata_.Clear();
 }
 
@@ -211,19 +229,46 @@ bool NetInfo::MergePartialFromCodedStream(
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated uint32 sockets = 1;
+      // .frrpc.network.eNetType net_type = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+            static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+                 input, &value)));
+          set_net_type(static_cast< ::frrpc::network::eNetType >(value));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
+      // repeated uint32 sockets = 2;
+      case 2: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
           DO_((::google::protobuf::internal::WireFormatLite::ReadPackedPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
                  input, this->mutable_sockets())));
         } else if (
             static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+            static_cast< ::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitiveNoInline<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
-                 1, 10u, input, this->mutable_sockets())));
+                 1, 18u, input, this->mutable_sockets())));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
+      // bytes asbb = 3;
+      case 3: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_asbb()));
         } else {
           goto handle_unusual;
         }
@@ -256,15 +301,27 @@ void NetInfo::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated uint32 sockets = 1;
+  // .frrpc.network.eNetType net_type = 1;
+  if (this->net_type() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteEnum(
+      1, this->net_type(), output);
+  }
+
+  // repeated uint32 sockets = 2;
   if (this->sockets_size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteTag(1, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
+    ::google::protobuf::internal::WireFormatLite::WriteTag(2, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
     output->WriteVarint32(static_cast< ::google::protobuf::uint32>(
         _sockets_cached_byte_size_));
   }
   for (int i = 0, n = this->sockets_size(); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt32NoTag(
       this->sockets(i), output);
+  }
+
+  // bytes asbb = 3;
+  if (this->asbb().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytesMaybeAliased(
+      3, this->asbb(), output);
   }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -281,10 +338,16 @@ void NetInfo::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated uint32 sockets = 1;
+  // .frrpc.network.eNetType net_type = 1;
+  if (this->net_type() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
+      1, this->net_type(), target);
+  }
+
+  // repeated uint32 sockets = 2;
   if (this->sockets_size() > 0) {
     target = ::google::protobuf::internal::WireFormatLite::WriteTagToArray(
-      1,
+      2,
       ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
       target);
     target = ::google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(
@@ -292,6 +355,13 @@ void NetInfo::SerializeWithCachedSizes(
             _sockets_cached_byte_size_), target);
     target = ::google::protobuf::internal::WireFormatLite::
       WriteUInt32NoTagToArray(this->sockets_, target);
+  }
+
+  // bytes asbb = 3;
+  if (this->asbb().size() > 0) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        3, this->asbb(), target);
   }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -311,7 +381,7 @@ size_t NetInfo::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
-  // repeated uint32 sockets = 1;
+  // repeated uint32 sockets = 2;
   {
     size_t data_size = ::google::protobuf::internal::WireFormatLite::
       UInt32Size(this->sockets_);
@@ -325,6 +395,19 @@ size_t NetInfo::ByteSizeLong() const {
     _sockets_cached_byte_size_ = cached_size;
     GOOGLE_SAFE_CONCURRENT_WRITES_END();
     total_size += data_size;
+  }
+
+  // bytes asbb = 3;
+  if (this->asbb().size() > 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::BytesSize(
+        this->asbb());
+  }
+
+  // .frrpc.network.eNetType net_type = 1;
+  if (this->net_type() != 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::EnumSize(this->net_type());
   }
 
   int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
@@ -357,6 +440,13 @@ void NetInfo::MergeFrom(const NetInfo& from) {
   (void) cached_has_bits;
 
   sockets_.MergeFrom(from.sockets_);
+  if (from.asbb().size() > 0) {
+
+    asbb_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.asbb_);
+  }
+  if (from.net_type() != 0) {
+    set_net_type(from.net_type());
+  }
 }
 
 void NetInfo::CopyFrom(const ::google::protobuf::Message& from) {
@@ -384,6 +474,8 @@ void NetInfo::Swap(NetInfo* other) {
 void NetInfo::InternalSwap(NetInfo* other) {
   using std::swap;
   sockets_.InternalSwap(&other->sockets_);
+  asbb_.Swap(&other->asbb_);
+  swap(net_type_, other->net_type_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_cached_size_, other->_cached_size_);
 }

@@ -8,6 +8,9 @@
 **********************************************************/
 #include "controller.h"
 
+using namespace std;
+using namespace google::protobuf;
+
 namespace frrpc{
 
 Controller::Controller(){

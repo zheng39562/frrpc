@@ -6,13 +6,22 @@
  * \version 
  * * \author zheng39562@163.com
 **********************************************************/
-#ifndef _controller_H
-#define _controller_H
+#ifndef _rpc_controller_H
+#define _rpc_controller_H
 
-#include "frrpc_define.h"
 #include <google/protobuf/service.h>
 
+#include "closure.h"
+#include "frrpc_define.h"
+
 namespace frrpc{
+
+enum eNetEvent{
+	eNetEvent_Method = 0,
+	eNetEvent_Connection,
+	eNetEvent_Disconnection,
+	eNetEvent_End
+};
 
 // An RpcController mediates a single method call.  The primary purpose of
 // the controller is to provide a way to manipulate settings specific to the
@@ -24,7 +33,8 @@ namespace frrpc{
 // advanced features (e.g. deadline propagation).
 //
 // This introduce from project of protobuf.
-class Controller : public google::protobuf::RpcController{
+//class Controller : public google::protobuf::RpcController{
+class Controller : public google::protobuf::RpcController {
 	public:
 		Controller();
 		virtual ~Controller();
@@ -44,7 +54,7 @@ class Controller : public google::protobuf::RpcController{
 		virtual bool Failed() const;
 
 		// If Failed() is true, returns a human-readable description of the error.
-		virtual string ErrorText() const;
+		virtual std::string ErrorText() const;
 
 		// Advises the RPC system that the caller desires that the RPC call be
 		// canceled.  The RPC system may cancel it immediately, may wait awhile and
@@ -62,7 +72,7 @@ class Controller : public google::protobuf::RpcController{
 		// you need to return machine-readable information about failures, you
 		// should incorporate it into your response protocol buffer and should
 		// NOT call SetFailed().
-		virtual void SetFailed(const string& reason);
+		virtual void SetFailed(const std::string& reason);
 
 		// If true, indicates that the client canceled the RPC, so the server may
 		// as well give up on replying to it.  The server should still call the
@@ -76,18 +86,23 @@ class Controller : public google::protobuf::RpcController{
 		// will be called immediately.
 		//
 		// NotifyOnCancel() must be called no more than once per request.
-		virtual void NotifyOnCancel(Closure* callback);
+		virtual void NotifyOnCancel(google::protobuf::Closure* callback);
 
 		// custom variables;
 		
-		// net_link_id
+		// link_id
 		inline void set_link_id(LinkID link_id){ link_id_ = link_id; }
-		inline NetLinkId link_id()const{ return link_id_; };
+		inline LinkID link_id()const{ return link_id_; };
+
+		// type of message.
+		inline void set_net_event(eNetEvent net_event){ net_event_ = net_event; }
+		inline eNetEvent net_event()const{ return net_event_; }
 
 	private:
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Controller);
 	private:
-		NetLinkId net_link_id_;
+		LinkID link_id_;
+		eNetEvent net_event_;
 };
 
 }// namespace frrpc

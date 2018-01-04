@@ -13,13 +13,26 @@
 
 // typedef {{{2
 typedef uint32_t Port;
-typedef uint32_t Socket;
-typedef unsigned short Port;
-typedef unsigned char Byte;
-typedef uint16_t RpcMetaSize;
-typedef uint32_t RpcRequestSize;
-typedef uint64_t RpcRequestId;
+typedef uint8_t Byte;
 typedef uint64_t LinkID;
+typedef uint64_t RpcRequestId;
+
+typedef uint32_t PacketSize;
+typedef uint16_t NetInfoSize;
+typedef uint16_t RpcMetaSize;
+typedef uint32_t RpcBodySize;
+
+typedef uint32_t GateID;
+
+#define __HP_SOCKET
+#ifdef __HP_SOCKET
+#include "hpsocket/SocketInterface.h"
+#include "hpsocket/HPSocket.h"
+
+typedef CONNID Socket;
+#else
+typedef int Socket;
+#endif
 // }}}2
 
 // enum {{{2
@@ -36,6 +49,9 @@ typedef uint64_t LinkID;
 // marco number {{{2
 #define RPC_REQUEST_ID_NULL 0
 #define RPC_LINK_ID_NULL 0
+
+#define NET_HEART_TIMEOUT				60
+#define NET_PACKET_MAX_SIZE				4 * 1024
 // }}}2
 
 // common class {{{2

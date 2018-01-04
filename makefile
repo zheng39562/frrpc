@@ -1,6 +1,6 @@
 include ../../make/config.mk
 
-PROJECT_NAME=world
+PROJECT_NAME=frrpc
 PROJECT_OBJECTS= \
 	./$(OUTPUT_TEMPORARY_PATH)/./world.pb.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./world_server.o

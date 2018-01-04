@@ -8,40 +8,44 @@
 **********************************************************/
 #include "server.h"
 
-#include "net_client.h"
-#include "net_server.h"
 #include "closure.h"
+#include "fr_public/pub_tool.h"
+#include "net_server.h"
 
 using namespace std;
+using namespace fr_public;
 using namespace google::protobuf;
+using namespace frrpc::network;
 
 namespace frrpc{
 
 // class Server{{{1
-Server::Server()
-	:rpc_net_(new NetServer()),
+Server::Server()// {{{2
+	:rpc_net_(NULL),
 	 option_(),
 	 name_2service_(),
 	 work_threads_(),
-	 compress_type_(eCompressType_Not)
-{ ; }
+	 compress_type_(eCompressType_Not),
+	 net_event_cb_()
+{ ; }// }}}2
 
-Server::Server(ServerOption& option)
-	:rpc_net_(new NetServer()),
+Server::Server(ServerOption& option)// {{{2
+	:rpc_net_(NULL),
 	 option_(option),
 	 name_2service_(),
 	 work_threads_(),
-	 compress_type_(eCompressType_Not)
-{ ; }
+	 compress_type_(eCompressType_Not),
+	 net_event_cb_()
+{ ; }// }}}2
 
-Server::~Server(){ 
+Server::~Server(){ // {{{2
 	DELETE_POINT_IF_NOT_NULL(rpc_net_);
 
 	Stop();
-}
+}// }}}2
 
-bool Server::AddService(::google::protobuf::Service* service_){ // {{{2
-	string service_name = service_->GetDescriptor()->name();
+bool Server::AddService(::google::protobuf::Service* service){ // {{{2
+	string service_name = service->GetDescriptor()->name();
 	if(name_2service_.find(service_name) == name_2service_.end()){
 		name_2service_.insert(make_pair(service_name, service));
 		return true;
@@ -95,13 +99,13 @@ bool Server::SendRpcMessage(const vector<LinkID>& link_ids, const std::string& s
 	Service* service = GetServiceFromName(service_name);
 	if(service == NULL){ DEBUG_E("找不到服务[" << service_name << "]是否未加载改服务."); return false; }
 
-	RpcMeta rpc_meta = new RpcMeta();
+	RpcMeta rpc_meta;
 	rpc_meta.set_service_name(service_name);
 	rpc_meta.set_method_index(service->GetDescriptor()->FindMethodByName(method_name)->index());
 	rpc_meta.mutable_rpc_request_meta()->set_request_id(RPC_REQUEST_ID_NULL);
 	rpc_meta.set_compress_type(compress_type_);
 
-	if(!rpc_net_->Send(link_ids, rpc_meta, response){
+	if(!rpc_net_->Send(link_ids, rpc_meta, response)){
 		DEBUG_E("Fail to send message.");
 		return false;
 	}
@@ -115,16 +119,16 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 		work_threads_.push_back(thread(
 			[&](){
 				Controller* cntl = new Controller();
-
 				RpcMessage* rpc_message = new RpcMessage();
-				Closure* done = new NewPermanentCallback(this, Server::ReleaseRpcResource, cntl, rpc_message);
+
+				Closure* done = frrpc::NewPermanentCallback(this, &Server::ReleaseRpcResource, cntl, rpc_message);
 				if(rpc_message == NULL || done == NULL){ 
 					init_thread = false; 
 					DEBUG_E("Can not create closure.(Or operator of new has exception.)"); 
 					return ; 
 				}
 
-				queue<RpcServerPacket> packet_queue;
+				queue<RpcPacketPtr> packet_queue;
 				while(!IsQuit()){
 					rpc_net_->FetchMessageQueue(packet_queue, 2000);
 
@@ -133,22 +137,29 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 					}
 
 					while(!IsQuit() && !packet_queue.empty()){
-						RpcServerPacketPtr package = packet_queue.top();
+						RpcPacketPtr package = packet_queue.front();
 						packet_queue.pop();
 
-						google::protobuf::Service* cur_service(NULL);
-						if(ParseBinary(package, *rpc_message, cur_service)){
-							cntl->set_link_id(package->link_id);
-							cur_service->CallMethod(rpc_message.method_descriptor, cntl, rpc_message.request, rpc_message.response, done);
+						cntl->set_link_id(package->link_id);
+						cntl->set_net_event(package->net_event);
+
+						if(cntl->net_event() == eNetEvent_Method){
+							google::protobuf::Service* cur_service(NULL);
+							if(ParseBinary(package, *rpc_message, cur_service)){
+								cur_service->CallMethod(rpc_message->method_descriptor, cntl, rpc_message->request, rpc_message->response, done);
+							}
+							else{
+								DEBUG_E("Parse rpc message is failed.");
+								continue;
+							}
 						}
 						else{
-							DEBUG_E("Parse rpc message is failed.");
-							continue;
+							if(net_event_cb_ != NULL){
+								net_event_cb_(cntl);
+							}
 						}
 					}
 				}
-
-				packet_queue.clear();
 
 				DELETE_POINT_IF_NOT_NULL(rpc_message);
 				DELETE_POINT_IF_NOT_NULL(done);
@@ -169,12 +180,12 @@ void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){ // {
 	if(rpc_message == NULL){ DEBUG_E("point of message is null."); return; }
 	if(cntl->link_id() != RPC_LINK_ID_NULL){ DEBUG_E("link is is zero. Can not send data."); return; }
 
-	if(!rpc_message.IsCompleted()){
+	if(!rpc_message->IsCompleted()){
 		DEBUG_W("Message is not completed. (Mabye recall done->Run())");
 		return;
 	}
 
-	if(!rpc_net_->Send(cntl->link_id(), rpc_message->rpc_meta, rpc_message->response)){
+	if(!rpc_net_->Send(cntl->link_id(), rpc_message->rpc_meta, *(rpc_message->response))){
 		DEBUG_E("Fail to send message.");
 		return;
 	}
@@ -183,11 +194,11 @@ void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){ // {
 	rpc_message->Clear();
 } // }}}2
 
-const ::google::protobuf::Message* Server::CreateRequest(::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size){ // {{{2
+const ::google::protobuf::Message* Server::CreateRequest(const ::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size){ // {{{2
 	if(method_descriptor != NULL && buffer != NULL && size > 0){
 		Message* request = CreateProtoMessage(method_descriptor->input_type());
 		if(request != NULL){
-			if(!request.ParseFromString(string(buffer, size))){
+			if(!request->ParseFromString(string(buffer, size))){
 				DELETE_POINT_IF_NOT_NULL(request);
 			}
 		}
@@ -196,14 +207,14 @@ const ::google::protobuf::Message* Server::CreateRequest(::google::protobuf::Met
 	return NULL;
 }///}}}2
 
-::google::protobuf::Message* Server::CreateResponse(::google::protobuf::MethodDescriptor* method_descriptor){ // {{{2
+::google::protobuf::Message* Server::CreateResponse(const google::protobuf::MethodDescriptor* method_descriptor){ // {{{2
 	if(method_descriptor != NULL){
 		return CreateProtoMessage(method_descriptor->output_type());
 	}
 	return NULL;
 } // }}}2
 
-const ::google::protobuf::Service* Server::GetServiceFromName(const std::string& service_name){ // {{{2
+google::protobuf::Service* Server::GetServiceFromName(const std::string& service_name){ // {{{2
 	auto name_2service_iter = name_2service_.find(service_name);
 	if(name_2service_iter != name_2service_.end()){
 		return name_2service_iter->second;
@@ -211,18 +222,18 @@ const ::google::protobuf::Service* Server::GetServiceFromName(const std::string&
 	return NULL;
 } // }}}2
 
-bool Server::ParseBinary(const RpcServerPacketPtr& package, RpcMessage& rpc_message, google::protobuf::Service* service){ // {{{2
+bool Server::ParseBinary(const RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service* service){ // {{{2
 	rpc_message.Clear();
 
-	service = GetServiceFromName(package->rpc_meta.service_name);
+	service = GetServiceFromName(packet->rpc_meta.service_name());
 	if(service == NULL){
-		DEBUG_E("Can not find service. service name is [" << rpc_message->rpc_meta->service_name << "]");
-		continue;
+		DEBUG_E("Can not find service. service name is [" << rpc_message.rpc_meta.service_name() << "]");
+		return false;
 	}
 
-	rpc_message.request_id = package->rpc_meta.rpc_request_meta().request_id();
-	rpc_message.method_descriptor = service->method(package->rpc_meta.method_index());
-	rpc_message.request = CreateRequest(rpc_message.method_descriptor, (const char*)binary.buffer(), binary.size());
+	rpc_message.rpc_meta = packet->rpc_meta;
+	rpc_message.method_descriptor = service->GetDescriptor()->method(rpc_message.rpc_meta.method_index());
+	rpc_message.request = CreateRequest(rpc_message.method_descriptor, (const char*)packet->binary->buffer(), packet->binary->size());
 	rpc_message.response = CreateResponse(rpc_message.method_descriptor);
 
 	return rpc_message.IsCompleted();
