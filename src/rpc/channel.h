@@ -12,26 +12,25 @@
 #include <vector>
 #include <map>
 #include <atomic>
-#include <functional>
+#include <queue>
 
 #include <google/protobuf/service.h>
+#include "net.pb.h"
+#include "rpc_base_net.h"
+#include "net_channel.h"
+#include "controller.h"
 
 #include "frrpc_define.h"
 #include "frrpc_function.h"
-#include "rpc_base_net.h"
-#include "net.pb.h"
-#include "controller.h"
-#include "rpc_base_net.h"
 
 namespace frrpc{
 
 // class ChannelOption {{{1
 class ChannelOption{
 	public:
-		ChannelOption(network::eNetType _net_type): net_type(_net_type), compress_type(eCompressType_Not) { ; }
+		ChannelOption(): compress_type(eCompressType_Not) { ; }
 		~ChannelOption()=default;
 	public:
-		network::eNetType net_type;
 		eCompressType compress_type;
 };
 // }}}1

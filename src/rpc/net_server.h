@@ -130,6 +130,8 @@ class RpcServer_Gate : public RpcBaseNet{
 		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
 		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
 
+		virtual bool GetRemoteAddress(LinkID link_id, std::string& ip, Port& port);
+
 		inline LinkID BuildLinkID(GateID gate_id, Socket socket)const{ return socket * pow(10, gate_length_) + gate_id; }
 		inline Socket GetSocket(LinkID link_id)const{ return link_id % (uint32_t)pow(10, gate_length_); }
 		inline GateID GetGateID(LinkID link_id)const{ return link_id / (uint32_t)pow(10, gate_length_); }

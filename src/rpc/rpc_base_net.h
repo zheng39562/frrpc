@@ -94,7 +94,7 @@ class RpcBaseNet{
 		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body)=0;
 
 		// Read address by link_id;
-		virtual bool GetRemoteAddress(LinkID link_id, std::string& ip, Port& port);
+		virtual bool GetRemoteAddress(LinkID link_id, std::string& ip, Port& port)=0;
 
 		void FetchMessageQueue(std::queue<RpcPacketPtr>& packet_queue, int32_t max_queue_size);
 	protected:

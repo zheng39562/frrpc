@@ -37,10 +37,10 @@ RpcServer_Server::~RpcServer_Server(){ // {{{2
 
 bool RpcServer_Server::Start(){// {{{2
 	if(!server_->Start(ip_.c_str(), port_)){
-		DEBUG_E("Fail to start server");
+		RPC_DEBUG_E("Fail to start server");
 		return false;
 	}
-	DEBUG_I("Listen [" << ip_ << ":" << port_ << "]");
+	RPC_DEBUG_I("Listen [" << ip_ << ":" << port_ << "]");
 
 	RunHeartCheck(NET_HEART_TIMEOUT);
 	return true;
@@ -48,10 +48,10 @@ bool RpcServer_Server::Start(){// {{{2
 
 bool RpcServer_Server::Stop(){// {{{2
 	if(!server_->Stop()){
-		DEBUG_E("Fail to stop server.");
+		RPC_DEBUG_E("Fail to stop server.");
 		return false;
 	}
-	DEBUG_I("stop server.");
+	RPC_DEBUG_I("stop server.");
 
 	StopHeartCheck();
 	return true;
@@ -66,7 +66,8 @@ bool RpcServer_Server::Send(const RpcMeta& meta, const Message& body){// {{{2
 }// }}}2
 
 bool RpcServer_Server::Send(LinkID link_id, const RpcMeta& meta, const Message& body){// {{{2
-	return Send({link_id}, meta, body);
+	vector<LinkID> link_ids({link_id});
+	return Send(link_ids, meta, body);
 }// }}}2
 
 bool RpcServer_Server::Send(const vector<LinkID>& link_ids, const RpcMeta& meta, const Message& body){// {{{2
@@ -77,14 +78,14 @@ bool RpcServer_Server::Send(const vector<LinkID>& link_ids, const RpcMeta& meta,
 		ret = true;
 		for(auto& link_id : link_ids){
 			if(!server_->Send(GetSocket(link_id), (const Byte*)binary->buffer(), binary->size())){
-				DEBUG_E("Fail to send body. Detail : link_id [" << link_id << "] body size [" << binary->size() << "]");
+				RPC_DEBUG_E("Fail to send body. Detail : link_id [" << link_id << "] body size [" << binary->size() << "]");
 				ret = false;
 				continue;
 			}
 		}
 	}
 	else{
-		DEBUG_E("Fail to build binary(bianry is null).");
+		RPC_DEBUG_E("Fail to build binary(bianry is null).");
 	}
 	return ret;
 }// }}}2
@@ -141,7 +142,7 @@ EnHandleResult RpcServer_Server::OnReceive(ITcpServer* pSender, Socket socket, i
 				}
 			}
 			else{
-				DEBUG_E("Fail to new packet.");
+				RPC_DEBUG_E("Fail to new packet.");
 				return HR_ERROR;
 			}
 		}
@@ -165,7 +166,7 @@ bool RpcServer_Server::IsChannel()const{// {{{2
 }// }}}2
 
 EnHandleResult RpcServer_Server::ReturnError(Socket socket, const std::string& error_info){// {{{2
-	DEBUG_E(error_info << " Disconnect socket [" << socket << "]");
+	RPC_DEBUG_E(error_info << " Disconnect socket [" << socket << "]");
 	Disconnect(BuildLinkID(socket));
 	return HR_ERROR;
 };// }}}2
@@ -202,7 +203,7 @@ RpcServer_Gate_Client::~RpcServer_Gate_Client(){// {{{2
 bool RpcServer_Gate_Client::Start(){// {{{2
 	bool asyn_conn(false);
 	if(!net_client_->Start(ip_.c_str(), port_, asyn_conn)){
-		DEBUG_E("Fail to start[" << ip_ << ":" << port_ << "]");
+		RPC_DEBUG_E("Fail to start[" << ip_ << ":" << port_ << "]");
 		return false;
 	}
 	return true;
@@ -230,12 +231,12 @@ bool RpcServer_Gate_Client::Send(const vector<LinkID>& link_ids, const RpcMeta& 
 		if(binary != NULL){
 			ret = net_client_->Send((const Byte*)binary->buffer(), binary->size());
 			if(!ret){
-				DEBUG_E("Fail to send binary.");
+				RPC_DEBUG_E("Fail to send binary.");
 			}
 		}
 	}
 	else{
-		DEBUG_E("None socket is belong to this gate.");
+		RPC_DEBUG_E("None socket is belong to this gate.");
 	}
 
 	return ret;
@@ -290,7 +291,7 @@ EnHandleResult RpcServer_Gate_Client::OnReceive(ITcpClient* pSender, Socket sock
 				}
 			}
 			else{
-				DEBUG_E("Fail to new packet.");
+				RPC_DEBUG_E("Fail to new packet.");
 				return HR_ERROR;
 			}
 		}
@@ -303,7 +304,7 @@ EnHandleResult RpcServer_Gate_Client::OnClose(ITcpClient* pSender, Socket socket
 }// }}}2
 
 EnHandleResult RpcServer_Gate_Client::ReturnError(const std::string& err_info){// {{{2
-	DEBUG_E(err_info);
+	RPC_DEBUG_E(err_info);
 	Stop();
 	return HR_ERROR; 
 }// }}}2
@@ -348,7 +349,7 @@ bool RpcServer_Gate::Stop(){// {{{2
 	bool ret(true);
 	for(auto& gate_client : gate_client_list_){
 		if(!gate_client->Stop()){
-			DEBUG_D("Fail to stop gate[" << gate_client->gate_id() << "].");
+			RPC_DEBUG_D("Fail to stop gate[" << gate_client->gate_id() << "].");
 			ret = false;
 		}
 	}
@@ -388,6 +389,10 @@ bool RpcServer_Gate::Send(const vector<LinkID>& link_ids, const RpcMeta& meta, c
 		}
 	}
 	return ret;
+}// }}}2
+
+bool RpcServer_Gate::GetRemoteAddress(LinkID link_id, std::string& ip, Port& port){// {{{2
+	return false;
 }// }}}2
 
 bool RpcServer_Gate::IsChannel()const{// {{{2

@@ -3,11 +3,15 @@ COMMON_LIBRARY=-luuid -pthread -lrt -ldl \
 			   -lfr_public -lfr_sql -lmysqlcppconn \
 			   -lprotobuf  
 COMMON_LIBRARY_PATH=-L/usr/
-COMMON_INCLUDE=-I../
+COMMON_INCLUDE=-I../../src/
 COMMON_MACRO=-D__LINUX
 #COMMON_OPTION=-Wl,--no-as-needed
-COMMON_CFLAGS=-g -std=c++11 -fPIC
+COMMON_CFLAGS=-g -std=c++11
 COMMON_CXX=g++
+
+OPTIONAL_CFLAGS=
+
+EXAMPLE_LIBRARY=-lhpsocket -lfrrpc
 
 BUILD_LIBRARY_PATH=../../build/lib
 BUILD_INCLUDE_PATH=../../build/include
@@ -23,20 +27,18 @@ OUTPUT_EXAMPLE_PATH=../../out
 # 匹配规则
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.cpp
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
 
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.cc
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
 
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.c
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
 
 FREEDOM_COMMON_IP=127.0.0.1
 FREEDOM_WORLD_PORT=12000
-
-STR_TMP="   $2   "
 
 # $(1) project_name 
 define BuildStopScript

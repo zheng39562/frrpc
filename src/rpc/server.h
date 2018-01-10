@@ -14,12 +14,14 @@
 
 #include "fr_template/lock_queue.hpp"
 #include "fr_public/pub_memory.h"
+#include "fr_public/pub_tool.h"
+#include "closure.h"
+#include "net_server.h"
 
 #include "frrpc_function.h"
 #include "rpc_base_net.h"
 
 namespace frrpc{
-
 
 // class ServerOption{{{1
 class ServerOption{
@@ -51,7 +53,7 @@ class RpcMessage{
 	public:
 		RpcMeta rpc_meta;
 		const ::google::protobuf::MethodDescriptor* method_descriptor;
-		const ::google::protobuf::Message* request;
+		::google::protobuf::Message* request;
 		::google::protobuf::Message* response;
 };
 
@@ -72,7 +74,9 @@ class Server{
 		bool StartGate(const std::vector<std::tuple<const std::string&, Port> >& gate_list);
 		bool StartMQ(const std::vector<std::tuple<const std::string&, Port> >& mq_list);
 
-		void Stop();
+		bool Stop();
+
+		bool RunUntilQuit();
 
 		// Is you want receive network event. You need register a callback.
 		// Event does not include method of rpc.
@@ -90,9 +94,7 @@ class Server{
 		void ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message);
 		
 		google::protobuf::Service* GetServiceFromName(const std::string& service_name);
-		const ::google::protobuf::Message* CreateRequest(const ::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size);
-		::google::protobuf::Message* CreateResponse(const ::google::protobuf::MethodDescriptor* method_descriptor);
-		bool ParseBinary(const frrpc::network::RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service* service);
+		bool ParseBinary(const frrpc::network::RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service** service);
 	private:
 		frrpc::network::RpcBaseNet* rpc_net_;
 		ServerOption option_;

@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package frrpc;
 
-
 enum eCompressType{
 	eCompressType_Invilad = 0;
 	eCompressType_Not = 1;

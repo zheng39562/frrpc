@@ -9,28 +9,28 @@
 #ifndef _frrpc_function_H
 #define _frrpc_function_H
 
-#include "fr_public/pub_memory.h"
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/message.h>
+#include <google/protobuf/dynamic_message.h>
+
+#include "fr_public/pub_memory.h"
+#include "frrpc_define.h"
 
 namespace frrpc{
 
-bool RunUntilStop();
-bool IsQuit();
-
-void OpenRpcLog();
-void CloseRpcLog();
+void AskToQuit();
+bool IsAskedToQuit();
 
 google::protobuf::Message* CreateProtoMessage(const google::protobuf::Descriptor* type);
 
 // T must a number(int long shor etc).
-template <typename T>
-inline uint32_t GetNumberLength(T number){
+template <typename Integer>
+inline uint32_t GetNumberLength(Integer integer){
 	uint32_t length(0);
 	do{
 		++length;
-		number /= 10;
-	}while((number - 0) < 0.0000001);
+		integer /= 10;
+	}while((integer - 0) < 0.0000001);
 
 	return length;
 }

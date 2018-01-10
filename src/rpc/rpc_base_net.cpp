@@ -9,6 +9,7 @@
 #include "rpc_base_net.h"
 
 #include "fr_public/pub_tool.h"
+#include "frrpc_function.h"
 
 using namespace std;
 using namespace fr_public;
@@ -31,7 +32,11 @@ RpcBaseNet::RpcBaseNet()// {{{2
 	;
 }// }}}2
 
-RpcBaseNet::~RpcBaseNet(){ ; }
+RpcBaseNet::~RpcBaseNet(){ // {{{2
+	if(thread_heart_time_.joinable()){
+		thread_heart_time_.join(); 
+	}
+}// }}}2
 
 bool RpcBaseNet::GetMessageFromBinary(const BinaryMemory& binary, NetInfo& net_info, RpcPacketPtr& packet){// {{{2
 	uint32_t cur_offset(0);
@@ -40,7 +45,7 @@ bool RpcBaseNet::GetMessageFromBinary(const BinaryMemory& binary, NetInfo& net_i
 	cur_offset += sizeof(NetInfoSize);
 	if(net_size > 0){
 		if(!net_info.ParseFromArray(binary.buffer(cur_offset), net_size)){
-			DEBUG_E("Fail to parse net_info.");
+			RPC_DEBUG_E("Fail to parse net_info.");
 			return false;
 		}
 		cur_offset += net_size;
@@ -51,13 +56,13 @@ bool RpcBaseNet::GetMessageFromBinary(const BinaryMemory& binary, NetInfo& net_i
 		cur_offset += sizeof(RpcMetaSize);
 		if(meta_size > 0){
 			if(!packet->rpc_meta.ParseFromArray(binary.buffer(cur_offset), meta_size)){
-				DEBUG_E("Fail to parse rpc meta.");
+				RPC_DEBUG_E("Fail to parse rpc meta.");
 				return false;
 			}
 			cur_offset += meta_size;
 		}
 		else{
-			DEBUG_E("rpc meta is zero.");
+			RPC_DEBUG_E("rpc meta is zero.");
 			return false;
 		}
 
@@ -66,14 +71,14 @@ bool RpcBaseNet::GetMessageFromBinary(const BinaryMemory& binary, NetInfo& net_i
 			packet->binary = BinaryMemoryPtr(new BinaryMemory());
 			packet->binary->add(binary.buffer(cur_offset), body_size);
 			if(packet->binary == NULL){
-				DEBUG_E("new failed.");
+				RPC_DEBUG_E("new failed.");
 				return false;
 			}
 		}
 	}
 	else{
 		if(net_info.net_type() <= eNetType_Special){
-			DEBUG_E("Message is not special.And packet is null.");
+			RPC_DEBUG_E("Message is not special.And packet is null.");
 			return false;
 		}
 	}
@@ -81,7 +86,7 @@ bool RpcBaseNet::GetMessageFromBinary(const BinaryMemory& binary, NetInfo& net_i
 	return true;
 }// }}}2
 
-BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info){// {{{2
+BinaryMemoryPtr RpcBaseNet::BuildBinaryFromMessage(const NetInfo& net_info){// {{{2
 	BinaryMemoryPtr binary(new BinaryMemory());
 	if(binary != NULL){
 		NetInfoSize net_info_size(net_info.ByteSize());
@@ -93,18 +98,18 @@ BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info){// {{{2
 			
 			PushNumberToBinaryMemory(net_info_size, binary);
 			if(!net_info.SerializeToArray(binary->CopyMemoryFromOut(net_info.ByteSize()), net_info.ByteSize())){
-				DEBUG_E("Fail to serialize net info.");
+				RPC_DEBUG_E("Fail to serialize net info.");
 				return NULL;
 			}
 		}
 		else{
-			DEBUG_E("Fail to new buffer ");
+			RPC_DEBUG_E("Fail to new buffer ");
 		}
 	}
 	return binary;
 }// }}}2
 
-BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& meta, const Message& body){// {{{2
+BinaryMemoryPtr RpcBaseNet::BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& meta, const Message& body){// {{{2
 	BinaryMemoryPtr binary(new BinaryMemory());
 	if(binary != NULL){
 		NetInfoSize net_info_size(net_info.ByteSize());
@@ -117,23 +122,23 @@ BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& m
 			
 			PushNumberToBinaryMemory(net_info_size, binary);
 			if(!net_info.SerializeToArray(binary->CopyMemoryFromOut(net_info.ByteSize()), net_info.ByteSize())){
-				DEBUG_E("Fail to serialize net info.");
+				RPC_DEBUG_E("Fail to serialize net info.");
 				return NULL;
 			}
 
 			PushNumberToBinaryMemory(rpc_meta_size, binary);
 			if(!meta.SerializeToArray(binary->CopyMemoryFromOut(meta.ByteSize()), meta.ByteSize())){
-				DEBUG_E("Fail to serialize meta.");
+				RPC_DEBUG_E("Fail to serialize meta.");
 				return NULL;
 			}
 
 			if(!body.SerializeToArray(binary->CopyMemoryFromOut(body.ByteSize()), body.ByteSize())){
-				DEBUG_E("Fail to serialize body.");
+				RPC_DEBUG_E("Fail to serialize body.");
 				return NULL;
 			}
 		}
 		else{
-			DEBUG_E("Fail to new buffer ");
+			RPC_DEBUG_E("Fail to new buffer ");
 		}
 	}
 	return binary;
@@ -148,7 +153,7 @@ void RpcBaseNet::PushMessageToQueue(const RpcPacketPtr& packet){// {{{2
 		packet_queue_.push(packet);
 	}
 	else{
-		DEBUG_E("packet is null. Please check.");
+		RPC_DEBUG_E("packet is null. Please check.");
 	}
 }// }}}2
 
@@ -156,26 +161,33 @@ void RpcBaseNet::RunHeartCheck(time_t timeout){// {{{2
 	if(!heart_check_){
 		heart_check_ = true;
 		thread_heart_time_ = thread([&](){
+			time_t cur_times(0);
 			if(!IsChannel()){
-				while(heart_check_){
-					lock_guard<mutex> lock(mutex_heart_time_);
-					for(auto& link_id : link_wait_heart_array_){
-						Disconnect(link_id);
+				while(heart_check_ && !IsAskedToQuit()){
+					if(++cur_times > timeout){
+						cur_times = 0;
+						lock_guard<mutex> lock(mutex_heart_time_);
+						for(auto& link_id : link_wait_heart_array_){
+							Disconnect(link_id);
+						}
+
+						link_wait_heart_array_ = link_id_array_;
 					}
-
-					link_wait_heart_array_ = link_id_array_;
-
-					FrSleep(timeout * 1000);
+						
+					FrSleep(1000);
 				}
 			}
 			else{
 				time_t sleep_time = timeout * 250; // 1000 / 4
-				while(heart_check_){
-					if(!SendHeart(0)){
-						DEBUG_E("Channel fail to send heart.");
+				while(heart_check_ && !IsAskedToQuit()){
+					if(++cur_times > sleep_time){
+						cur_times = 0;
+						if(!SendHeart(0)){
+							RPC_DEBUG_E("Channel fail to send heart.");
+						}
 					}
 
-					FrSleep(sleep_time);
+					FrSleep(1000);
 				}
 			}
 		});
@@ -189,7 +201,7 @@ void RpcBaseNet::StopHeartCheck(){// {{{2
 			thread_heart_time_.join();
 		}
 		else{
-			DEBUG_E("Fail to stop heart check.");
+			RPC_DEBUG_E("Fail to stop heart check.");
 		}
 
 		lock_guard<mutex> lock(mutex_heart_time_);

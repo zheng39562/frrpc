@@ -9,7 +9,7 @@
 #ifndef _frrpc_define_H
 #define _frrpc_define_H
 
-#include "fr_public/pub_log.h"
+#include "frrpc_log.h"
 
 // typedef {{{2
 typedef uint32_t Port;

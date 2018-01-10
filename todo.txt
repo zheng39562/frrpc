@@ -1,39 +1,18 @@
 ### TODO:
-	* client
-		* 支持最简单的同步读写
-		* 增加异步的回调函数注册机制。使用option的方式来进行.
-			* 在Channel添加到stub时，默认开启所有的消息的接收(但设为null,只有真正设置回调后才有效)。
-			  但真实回调，需要调用对应函数，并且通过done变量生变对应的callback。此函数可变，以最后一次为准。
-			  所有异步消息，需要通过调用channel.DoAsyncMsg() 来执行——通过此方式可以让用户来确定具体的执行线程。此调用支持多线程。
-	* server
-		* 支持通过done->Run()来结束的同步回调过程.
-		* 需要支持：监听，网关两种消息接受。通过需要预留扩展其他接收方式。
-			* 其他扩展暂时不开率的情况下，监听和网关只能同时存在一个。
-			  因为如果连网关，则不应该再存在监听.内部如果要走消息，应该通过网关转发，或以后的MQ扩展.
-		* 能够指定工作线程数（以保证能够做单线程的情况）
-		* 通过server-description和method-description来发送消息
-			* SendFunc(method, response);	// method中包含着server-description。但具体参数以易用性为准
-	* common
-		* 增加linux 信号量退出的功能.
-	* gate
-		* 支持直接的消息分发：需要server先请求注册
-			* server and client 需要提供对应的支持机制
-		* 支持某类服务的client状态标识机制。
-			* 即server可以通过特定消息，对某个gate上的某个socket进行绑定.
-			  只要是此类服务的消息,都会固定转发到该server上，
-			  直到server主动解绑，或该socket断开链接为止.
-			* 暂时只支持server的单向绑定。
-	* MQ or 其他通信方式的支持
-		* 在一些简单的地方预留(例如枚举，switch判断等). 但相对复杂的地方先进行预留。
-		* 年前应该不会有mq的扩展。
-	* hpsocket当前的使用方式存在bug（当发送大块数据时）
-		* 或者在基础上加锁，或者自己写一个net 在底层加锁.
-	* Controlller未实现.
 
 ### 零散记录
-	* Channel 也先带上netInfo结构
-		* 没有几个字节
-		* 方便后续扩展netinfo(in channel.)
+	* rpc结束的方案 : 整理的结束方案还没有设计.
+		* 信号量方案.
+	* 基本的server端的demo。
+	* gate还没有设计.
+
+	* Controlller未实现.
+		* 功能定位还不算特别明确.
 
 	* frvim 
 		* cs link 还存在bug。有时候会连接很多个。
+		* cpp 生成时 是中文。这个修改成英文.
+		* 自动读取功能好像有时候不会生效.
+
+### 后期
+	* network 更换后，调整一下头文件。部分头文件应该可以移动到cpp中。(现在暴露主要是hpsocket存在一些头文件顺序的依赖。)

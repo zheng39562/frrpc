@@ -30,7 +30,7 @@ RpcChannel_Server::~RpcChannel_Server(){// {{{2
 
 bool RpcChannel_Server::Start(){// {{{2
 	if(!net_client_->Start(ip_.c_str(), port_)){
-		DEBUG_E("Fail to start. ip[" << ip_ << "] port[" << port_ << "]");
+		RPC_DEBUG_E("Fail to start. ip[" << ip_ << "] port[" << port_ << "]");
 		return false;
 	}
 	return true;
@@ -51,7 +51,7 @@ bool RpcChannel_Server::Send(const RpcMeta& meta, const Message& body){// {{{2
 	if(binary != NULL){
 		ret = net_client_->Send((const Byte*)binary->buffer(), binary->size());
 		if(!ret){
-			DEBUG_E("Fail to send binary.");
+			RPC_DEBUG_E("Fail to send binary.");
 		}
 	}
 	return ret;
@@ -114,7 +114,7 @@ EnHandleResult RpcChannel_Server::OnReceive(ITcpClient* pSender, Socket socket, 
 				}
 			}
 			else{
-				DEBUG_E("Fail to new packet.");
+				RPC_DEBUG_E("Fail to new packet.");
 				return HR_ERROR;
 			}
 		}
@@ -127,7 +127,7 @@ EnHandleResult RpcChannel_Server::OnClose(ITcpClient* pSender, Socket socket, En
 }// }}}2
 
 EnHandleResult RpcChannel_Server::ReturnError(const std::string& error_info){// {{{2
-	DEBUG_E(error_info);
+	RPC_DEBUG_E(error_info);
 	Stop();
 }// }}}2
 
@@ -142,7 +142,7 @@ bool RpcChannel_Server::SendHeart(LinkID link_id){// {{{2
 	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info_);
 	if(binary != NULL){
 		if(!net_client_->Send((const Byte*)binary->buffer(), binary->size())){
-			DEBUG_E("Fail to send binary.");
+			RPC_DEBUG_E("Fail to send binary.");
 			return false;
 		}
 	}

@@ -8,10 +8,6 @@
 **********************************************************/
 #include "channel.h"
 
-#include <queue>
-
-#include "net_channel.h"
-
 using namespace std;
 using namespace fr_public;
 using namespace frrpc::network;
@@ -59,11 +55,11 @@ void Channel::Stop(){// {{{2
 // }}}2
 
 void Channel::CallMethod(const MethodDescriptor* method, RpcController* controller, const Message* request, Message* response, Closure* done){// {{{2
-	if(!init_success_){ DEBUG_E("Initialization is failed. Please check and new again."); return; }
+	if(!init_success_){ RPC_DEBUG_E("Initialization is failed. Please check and new again."); return; }
 
 	RpcRequestId request_id(++request_id_);
 	if(request_callback_.find(request_id) != request_callback_.end()){
-		DEBUG_W("request id is repeated.");
+		RPC_DEBUG_W("request id is repeated.");
 		return ;
 	}
 	request_callback_.insert(make_pair(request_id, RequestCallBack(done, response)));
@@ -75,19 +71,19 @@ void Channel::CallMethod(const MethodDescriptor* method, RpcController* controll
 	rpc_meta.set_compress_type(option_.compress_type);
 
 	if(!rpc_net_->Send(rpc_meta, *request)){
-		DEBUG_E("Fail to send request.");
+		RPC_DEBUG_E("Fail to send request.");
 		return ;
 	}
 }// }}}2
 
 void Channel::RegisterCallback(const MethodDescriptor* method, google::protobuf::Message* response, Closure* permanet_callback){// {{{2
-	if(!init_success_){ DEBUG_E("Initialization is failed. Please check and new again."); return; }
-	if(method == NULL || response == NULL || permanet_callback == NULL){ DEBUG_E("Not allow parameter is null."); return; }
+	if(!init_success_){ RPC_DEBUG_E("Initialization is failed. Please check and new again."); return; }
+	if(method == NULL || response == NULL || permanet_callback == NULL){ RPC_DEBUG_E("Not allow parameter is null."); return; }
 
 	string callback_key = method->service()->name() + to_string(method->index());
 	if(default_callback_.find(callback_key) != default_callback_.end()){
 		if(!ClearCallback(callback_key)){
-			DEBUG_E("service [" << method->service()->name() << "] method [" << method->name() << "] is exist.And fail to clear.");
+			RPC_DEBUG_E("service [" << method->service()->name() << "] method [" << method->name() << "] is exist.And fail to clear.");
 			return ;
 		}
 	}
@@ -95,18 +91,22 @@ void Channel::RegisterCallback(const MethodDescriptor* method, google::protobuf:
 }// }}}2
 
 void Channel::RunCallback(uint32_t run_cb_times){// {{{2
-	if(!init_success_){ DEBUG_E("Initialization is failed. Please check and try again."); return; }
+	if(!init_success_){ RPC_DEBUG_E("Initialization is failed. Please check and try again."); return; }
 
 	queue<RpcPacketPtr> packet_queue;
 	rpc_net_->FetchMessageQueue(packet_queue, 2000);
-	while(!IsQuit() && !packet_queue.empty()){
+	while(!IsAskedToQuit() && !packet_queue.empty()){
 		RpcPacketPtr package = packet_queue.front();
 		packet_queue.pop();
 
+		RPC_DEBUG_P("Receive packet.");
+
 		if(IsRequestMode(package)){
+			RPC_DEBUG_P("request.");
+
 			auto request_callback_iter = request_callback_.find(package->rpc_meta.rpc_request_meta().request_id());
 			if(request_callback_iter == request_callback_.end()){
-				DEBUG_E("Can not find request id [" << package->rpc_meta.rpc_request_meta().request_id() << "]");
+				RPC_DEBUG_E("Can not find request id [" << package->rpc_meta.rpc_request_meta().request_id() << "]");
 				return ;
 			}
 
@@ -117,7 +117,7 @@ void Channel::RunCallback(uint32_t run_cb_times){// {{{2
 		else{
 			auto default_callback_iter = default_callback_.find(package->rpc_meta.service_name() + to_string(package->rpc_meta.method_index()));
 			if(default_callback_iter != default_callback_.end()){
-				DEBUG_E("Can not find key [" << package->rpc_meta.service_name() << to_string(package->rpc_meta.method_index()) << "]");
+				RPC_DEBUG_E("Can not find key [" << package->rpc_meta.service_name() << to_string(package->rpc_meta.method_index()) << "]");
 				return ;
 			}
 			
@@ -145,6 +145,5 @@ bool Channel::ClearCallback(const std::string& callback_key){// {{{2
 	return false;
 }// }}}2
 
-} // namespace frrpc{
-
+} // namespace frrpc
 

@@ -8,10 +8,6 @@
 **********************************************************/
 #include "server.h"
 
-#include "closure.h"
-#include "fr_public/pub_tool.h"
-#include "net_server.h"
-
 using namespace std;
 using namespace fr_public;
 using namespace google::protobuf;
@@ -39,9 +35,11 @@ Server::Server(ServerOption& option)// {{{2
 { ; }// }}}2
 
 Server::~Server(){ // {{{2
-	DELETE_POINT_IF_NOT_NULL(rpc_net_);
-
 	Stop();
+
+	for(auto& name_2service_item : name_2service_){
+		DELETE_POINT_IF_NOT_NULL(name_2service_item.second);
+	}
 }// }}}2
 
 bool Server::AddService(::google::protobuf::Service* service){ // {{{2
@@ -57,12 +55,12 @@ bool Server::StartServer(const std::string& ip, Port port){// {{{2
 	DELETE_POINT_IF_NOT_NULL(rpc_net_);
 	rpc_net_ = new RpcServer_Server(ip, port);
 	if(!rpc_net_->Start()){
-		DEBUG_E("Fail to start server.");
+		RPC_DEBUG_E("Fail to start server.");
 		return false;
 	}
 
 	if(!InitThreads(option_)){
-		DEBUG_E("Call Init is Failed.");
+		RPC_DEBUG_E("Call Init is Failed.");
 		return false;
 	}
 	return true;
@@ -72,12 +70,12 @@ bool Server::StartGate(const vector<tuple<const std::string&, Port> >& gate_list
 	DELETE_POINT_IF_NOT_NULL(rpc_net_);
 	rpc_net_ = new RpcServer_Gate(gate_list);
 	if(!rpc_net_->Start()){
-		DEBUG_E("Fail to start server.");
+		RPC_DEBUG_E("Fail to start server.");
 		return false;
 	}
 
 	if(!InitThreads(option_)){
-		DEBUG_E("Call Init is Failed.");
+		RPC_DEBUG_E("Call Init is Failed.");
 		return false;
 	}
 	return true;
@@ -87,17 +85,28 @@ bool Server::StartMQ(const vector<tuple<const std::string&, Port> >& mq_list){//
 	return false;
 }// }}}2
 
-void Server::Stop(){ // {{{2
+bool Server::Stop(){ // {{{2
 	DELETE_POINT_IF_NOT_NULL(rpc_net_);
 
 	for(auto& thread_item : work_threads_){
-		thread_item.join();
+		if(thread_item.joinable()){
+			thread_item.join();
+		}
 	}
+	return true;
 } //}}}2
+
+bool Server::RunUntilQuit(){// {{{2
+	while(!IsAskedToQuit()){
+		FrSleep(1000);
+	}
+	RPC_DEBUG_P("Unit Quit.");
+	return Stop();
+}// }}}2
 
 bool Server::SendRpcMessage(const vector<LinkID>& link_ids, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response){ // {{{2
 	Service* service = GetServiceFromName(service_name);
-	if(service == NULL){ DEBUG_E("找不到服务[" << service_name << "]是否未加载改服务."); return false; }
+	if(service == NULL){ RPC_DEBUG_E("找不到服务[" << service_name << "]是否未加载改服务."); return false; }
 
 	RpcMeta rpc_meta;
 	rpc_meta.set_service_name(service_name);
@@ -106,7 +115,7 @@ bool Server::SendRpcMessage(const vector<LinkID>& link_ids, const std::string& s
 	rpc_meta.set_compress_type(compress_type_);
 
 	if(!rpc_net_->Send(link_ids, rpc_meta, response)){
-		DEBUG_E("Fail to send message.");
+		RPC_DEBUG_E("Fail to send message.");
 		return false;
 	}
 
@@ -124,19 +133,20 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 				Closure* done = frrpc::NewPermanentCallback(this, &Server::ReleaseRpcResource, cntl, rpc_message);
 				if(rpc_message == NULL || done == NULL){ 
 					init_thread = false; 
-					DEBUG_E("Can not create closure.(Or operator of new has exception.)"); 
+					RPC_DEBUG_E("Can not create closure.(Or operator of new has exception.)"); 
 					return ; 
 				}
 
 				queue<RpcPacketPtr> packet_queue;
-				while(!IsQuit()){
+				while(!IsAskedToQuit()){
 					rpc_net_->FetchMessageQueue(packet_queue, 2000);
 
 					if(packet_queue.empty()){
 						FrSleep(1);
+						continue;
 					}
 
-					while(!IsQuit() && !packet_queue.empty()){
+					while(!IsAskedToQuit() && !packet_queue.empty()){
 						RpcPacketPtr package = packet_queue.front();
 						packet_queue.pop();
 
@@ -145,11 +155,11 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 
 						if(cntl->net_event() == eNetEvent_Method){
 							google::protobuf::Service* cur_service(NULL);
-							if(ParseBinary(package, *rpc_message, cur_service)){
+							if(ParseBinary(package, *rpc_message, &cur_service)){
 								cur_service->CallMethod(rpc_message->method_descriptor, cntl, rpc_message->request, rpc_message->response, done);
 							}
 							else{
-								DEBUG_E("Parse rpc message is failed.");
+								RPC_DEBUG_E("Parse rpc message is failed.");
 								continue;
 							}
 						}
@@ -168,50 +178,35 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 	}
 
 	if(!init_thread){
-		DEBUG_E("Fail to create thread.");
+		RPC_DEBUG_E("Fail to create thread.");
 		Stop();
 		return false;
 	}
 
+	return true;
 }//}}}2
 
 void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){ // {{{2
-	if(rpc_net_ == NULL){ DEBUG_E("link is null."); return; }
-	if(rpc_message == NULL){ DEBUG_E("point of message is null."); return; }
-	if(cntl->link_id() != RPC_LINK_ID_NULL){ DEBUG_E("link is is zero. Can not send data."); return; }
+	RPC_DEBUG_P("Call ReleaseRpcResource");
+	if(rpc_net_ == NULL){ RPC_DEBUG_E("link is null."); return; }
+	if(rpc_message == NULL){ RPC_DEBUG_E("point of message is null."); return; }
+	if(cntl->link_id() == RPC_LINK_ID_NULL){ RPC_DEBUG_E("link is is zero. Can not send data."); return; }
 
 	if(!rpc_message->IsCompleted()){
-		DEBUG_W("Message is not completed. (Mabye recall done->Run())");
+		RPC_DEBUG_W("Message is not completed. (Mabye recall done->Run())");
 		return;
 	}
 
+	RPC_DEBUG_P("Send response.");
 	if(!rpc_net_->Send(cntl->link_id(), rpc_message->rpc_meta, *(rpc_message->response))){
-		DEBUG_E("Fail to send message.");
+		RPC_DEBUG_E("Fail to send message.");
 		return;
 	}
 
 	cntl->set_link_id(RPC_LINK_ID_NULL);
 	rpc_message->Clear();
-} // }}}2
 
-const ::google::protobuf::Message* Server::CreateRequest(const ::google::protobuf::MethodDescriptor* method_descriptor, const char* buffer, uint32_t size){ // {{{2
-	if(method_descriptor != NULL && buffer != NULL && size > 0){
-		Message* request = CreateProtoMessage(method_descriptor->input_type());
-		if(request != NULL){
-			if(!request->ParseFromString(string(buffer, size))){
-				DELETE_POINT_IF_NOT_NULL(request);
-			}
-		}
-		return request;
-	}
-	return NULL;
-}///}}}2
-
-::google::protobuf::Message* Server::CreateResponse(const google::protobuf::MethodDescriptor* method_descriptor){ // {{{2
-	if(method_descriptor != NULL){
-		return CreateProtoMessage(method_descriptor->output_type());
-	}
-	return NULL;
+	RPC_DEBUG_P("End.");
 } // }}}2
 
 google::protobuf::Service* Server::GetServiceFromName(const std::string& service_name){ // {{{2
@@ -222,19 +217,30 @@ google::protobuf::Service* Server::GetServiceFromName(const std::string& service
 	return NULL;
 } // }}}2
 
-bool Server::ParseBinary(const RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service* service){ // {{{2
+bool Server::ParseBinary(const RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service** service){ // {{{2
+	if(service == NULL){
+		RPC_DEBUG_E("point of service is null.");
+		return false;
+	}
 	rpc_message.Clear();
 
-	service = GetServiceFromName(packet->rpc_meta.service_name());
-	if(service == NULL){
-		DEBUG_E("Can not find service. service name is [" << rpc_message.rpc_meta.service_name() << "]");
+	google::protobuf::Service* cur_service = GetServiceFromName(packet->rpc_meta.service_name());
+	if(cur_service == NULL){
+		RPC_DEBUG_E("Can not find service. service name is [" << rpc_message.rpc_meta.service_name() << "]");
 		return false;
 	}
 
 	rpc_message.rpc_meta = packet->rpc_meta;
-	rpc_message.method_descriptor = service->GetDescriptor()->method(rpc_message.rpc_meta.method_index());
-	rpc_message.request = CreateRequest(rpc_message.method_descriptor, (const char*)packet->binary->buffer(), packet->binary->size());
-	rpc_message.response = CreateResponse(rpc_message.method_descriptor);
+	rpc_message.method_descriptor = cur_service->GetDescriptor()->method(rpc_message.rpc_meta.method_index());
+	rpc_message.request = cur_service->GetRequestPrototype(rpc_message.method_descriptor).New(); 
+	rpc_message.response = cur_service->GetResponsePrototype(rpc_message.method_descriptor).New(); 
+	*service = cur_service;
+
+	if(rpc_message.request != NULL){
+		if(!rpc_message.request->ParseFromArray(packet->binary->buffer(), packet->binary->size())){
+			rpc_message.Clear();
+		}
+	}
 
 	return rpc_message.IsCompleted();
 } // }}}2
