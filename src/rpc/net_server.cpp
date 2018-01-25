@@ -8,13 +8,14 @@
 **********************************************************/
 #include "net_server.h"
 
-#include "fr_public/pub_memory.h"
-#include "fr_public/pub_tool.h"
+#include "frpublic/pub_memory.h"
+#include "frpublic/pub_tool.h"
 #include "controller.h"
 #include "frrpc_function.h"
 
 using namespace std;
-using namespace fr_public;
+using namespace frpublic;
+using namespace frnet;
 using namespace google::protobuf;
 
 namespace frrpc{
@@ -24,7 +25,7 @@ namespace network{
 //
 
 RpcServer_Server::RpcServer_Server(const std::string &ip, Port port)// {{{2
-	:server_(this),
+	:server_(CreateNetServer(this)),
 	 ip_(ip),
 	 port_(port),
 	 net_info_()
@@ -33,6 +34,11 @@ RpcServer_Server::RpcServer_Server(const std::string &ip, Port port)// {{{2
 }// }}}2
 
 RpcServer_Server::~RpcServer_Server(){ // {{{2
+	if(server_ != NULL){
+		server_->Stop();
+		delete server_;
+		server_ = NULL;
+	}
 }// }}}2
 
 bool RpcServer_Server::Start(){// {{{2
@@ -77,7 +83,7 @@ bool RpcServer_Server::Send(const vector<LinkID>& link_ids, const RpcMeta& meta,
 	if(binary != NULL){
 		ret = true;
 		for(auto& link_id : link_ids){
-			if(!server_->Send(GetSocket(link_id), (const Byte*)binary->buffer(), binary->size())){
+			if(!server_->Send(GetSocket(link_id), binary)){
 				RPC_DEBUG_E("Fail to send body. Detail : link_id [" << link_id << "] body size [" << binary->size() << "]");
 				ret = false;
 				continue;
@@ -90,85 +96,70 @@ bool RpcServer_Server::Send(const vector<LinkID>& link_ids, const RpcMeta& meta,
 	return ret;
 }// }}}2
 
-bool RpcServer_Server::GetRemoteAddress(LinkID link_id, std::string& ip, Port& port){// {{{2
-	return false;
-}// }}}2
-
-EnHandleResult RpcServer_Server::OnPrepareListen(ITcpServer* pSender, SOCKET soListen){ return HR_OK; }
-
-EnHandleResult RpcServer_Server::OnAccept(ITcpServer* pSender, Socket socket, SOCKET soClient){// {{{2
-	PushMessageToQueue(RpcPacketPtr(new RpcPacket(BuildLinkID(socket), eNetEvent_Connection)));
-	AddLinkID(BuildLinkID(socket));
-	return HR_OK;
-}// }}}2
-
-EnHandleResult RpcServer_Server::OnSend(ITcpServer* pSender, Socket socket, const BYTE* pData, int iLength){// {{{2
-	return HR_OK;
-}// }}}2
-
-EnHandleResult RpcServer_Server::OnReceive(ITcpServer* pSender, Socket socket, int iLength){// {{{2
+bool RpcServer_Server::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){// {{{2
 	UpdateHeartTime(socket);
 
-	ITcpPullServer* server = ITcpPullServer::FromS(pSender);
-	if(server != NULL){
-		uint32_t size(0); 
-		while(iLength > 0 && iLength >= sizeof(uint32_t) && FR_OK == server->Peek(socket, (Byte*)&size, sizeof(size))){
-			if((size + sizeof(size)) > (uint32_t)iLength){ break; }
+	int32_t offset(0);
+	while((binary.size() - read_size) > sizeof(PacketSize)){
+		PacketSize size(*(const PacketSize*)binary.buffer()); 
+		if(size + sizeof(size) > (binary.size() - read_size)){ 
+			return true; 
+		}
 
-			if(size >= NET_PACKET_MAX_SIZE){ return ReturnError(socket, "net_type_size is bigger than buffer. Please reset buffer size(recompile)."); }
-			if(size == 0){ return ReturnError(socket, "size is zero."); }
-			if(FR_OK != server->Fetch(socket, (Byte*)&size, sizeof(size))){ return ReturnError(socket, "Fail to fetch head."); }
+		if(size >= NET_PACKET_MAX_SIZE){ return ReturnError(socket, "net_type_size is bigger than buffer. Please reset buffer size(recompile)."); }
+		if(size == 0){ return ReturnError(socket, "size is zero."); }
 
-			BinaryMemory binary;
-			binary.reserve(size);
-			if(FR_OK != server->Fetch(socket, (Byte*)binary.CopyMemoryFromOut(size), size)){ 
-				return ReturnError(socket, "Fail to fetch body."); 
+		NetInfo net_info;
+		RpcPacketPtr packet(new RpcPacket(BuildLinkID(socket), eNetEvent_Method));
+		if(packet != NULL){
+			if(!GetMessageFromBinary(binary, offset, net_info, packet)){
+				return ReturnError(socket, "Error : GetMessageFromBinary.");
 			}
 
-			iLength -= (size + sizeof(size));
-
-			NetInfo net_info;
-			RpcPacketPtr packet(new RpcPacket(BuildLinkID(socket), eNetEvent_Method));
-			if(packet != NULL){
-				if(!GetMessageFromBinary(binary, net_info, packet)){
-					return ReturnError(socket, "Error : GetMessageFromBinary.");
-				}
-
-				if(net_info.net_type() == net_info_.net_type()){
-					PushMessageToQueue(packet);
-				}
-				else{
-					return SendHeart(packet->link_id) ? HR_OK : HR_ERROR;
-				}
+			if(net_info.net_type() == net_info_.net_type()){
+				PushMessageToQueue(packet);
 			}
 			else{
-				RPC_DEBUG_E("Fail to new packet.");
-				return HR_ERROR;
+				return SendHeart(packet->link_id);
 			}
 		}
+		else{
+			RPC_DEBUG_E("Fail to new packet.");
+			return false;
+		}
+
+		read_size += size + sizeof(size);
+		offset += size + sizeof(size);
 	}
-	return HR_OK;
+	return true;
 }// }}}2
 
-EnHandleResult RpcServer_Server::OnClose(ITcpServer* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode){// {{{2
+void RpcServer_Server::OnConnect(Socket socket){// {{{2
+	PushMessageToQueue(RpcPacketPtr(new RpcPacket(BuildLinkID(socket), eNetEvent_Connection)));
+	AddLinkID(BuildLinkID(socket));
+}// }}}2
+
+void RpcServer_Server::OnDisconnect(Socket socket){// {{{2
 	PushMessageToQueue(RpcPacketPtr(new RpcPacket(BuildLinkID(socket), eNetEvent_Disconnection)));
-
 	DelLinkID(BuildLinkID(socket));
-	return HR_OK;
 }// }}}2
 
-EnHandleResult RpcServer_Server::OnShutdown(ITcpServer* pSender){// {{{2
-	return HR_OK;
-}// }}}2
+void RpcServer_Server::OnClose(){// {{{2
+	NET_DEBUG_D("close net server.");
+}//}}}2
+
+void RpcServer_Server::OnError(const NetError& net_error){// {{{2
+	NET_DEBUG_D("Receive error [" << net_error.err_no << "].");
+}//}}}2
 
 bool RpcServer_Server::IsChannel()const{// {{{2
 	return false;
 }// }}}2
 
-EnHandleResult RpcServer_Server::ReturnError(Socket socket, const std::string& error_info){// {{{2
+bool RpcServer_Server::ReturnError(Socket socket, const std::string& error_info){// {{{2
 	RPC_DEBUG_E(error_info << " Disconnect socket [" << socket << "]");
 	Disconnect(BuildLinkID(socket));
-	return HR_ERROR;
+	return false;
 };// }}}2
 
 bool RpcServer_Server::SendHeart(LinkID link_id){// {{{2
@@ -176,7 +167,7 @@ bool RpcServer_Server::SendHeart(LinkID link_id){// {{{2
 	net_info.set_net_type(eNetType_Heart);
 	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info);
 	if(binary != NULL){
-		return server_->Send(BuildLinkID(link_id), (const Byte*)binary->buffer(), binary->size());
+		return server_->Send(BuildLinkID(link_id), binary);
 	}
 	return false;
 }// }}}2
@@ -187,7 +178,7 @@ bool RpcServer_Server::SendHeart(LinkID link_id){// {{{2
 // class RpcServer_Gate {{{1
 
 RpcServer_Gate_Client::RpcServer_Gate_Client(RpcServer_Gate* rpc_server_gate, GateID gate_id, const std::string& ip, Port port)// {{{2
-	:net_client_(this),
+	:net_client_(CreateNetClient(this)),
 	 gate_id_(gate_id),
 	 ip_(ip),
 	 port_(port),
@@ -197,12 +188,15 @@ RpcServer_Gate_Client::RpcServer_Gate_Client(RpcServer_Gate* rpc_server_gate, Ga
 }// }}}2
 
 RpcServer_Gate_Client::~RpcServer_Gate_Client(){// {{{2
-	;
+	if(net_client_ != NULL){
+		net_client_->Stop();
+		delete net_client_;
+		net_client_ = NULL;
+	}
 }// }}}2
 
 bool RpcServer_Gate_Client::Start(){// {{{2
-	bool asyn_conn(false);
-	if(!net_client_->Start(ip_.c_str(), port_, asyn_conn)){
+	if(!net_client_->Start(ip_.c_str(), port_)){
 		RPC_DEBUG_E("Fail to start[" << ip_ << ":" << port_ << "]");
 		return false;
 	}
@@ -229,7 +223,7 @@ bool RpcServer_Gate_Client::Send(const vector<LinkID>& link_ids, const RpcMeta& 
 	if(net_info.sockets_size() > 0){
 		BinaryMemoryPtr binary = rpc_server_gate_->BuildBinaryFromMessage(net_info, meta, body);
 		if(binary != NULL){
-			ret = net_client_->Send((const Byte*)binary->buffer(), binary->size());
+			ret = net_client_->Send(binary);
 			if(!ret){
 				RPC_DEBUG_E("Fail to send binary.");
 			}
@@ -242,71 +236,65 @@ bool RpcServer_Gate_Client::Send(const vector<LinkID>& link_ids, const RpcMeta& 
 	return ret;
 }// }}}2
 
-EnHandleResult RpcServer_Gate_Client::OnConnect(ITcpClient* pSender, Socket socket){// {{{2
-	return HR_OK;
-}// }}}2
+bool RpcServer_Gate_Client::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){// {{{2
+	int32_t offset(0);
+	while((binary.size() - read_size) > sizeof(PacketSize)){
+		PacketSize size(*(const PacketSize*)binary.buffer()); 
+		if(size + sizeof(size) > (binary.size() - read_size)){ 
+			return true; 
+		}
 
-EnHandleResult RpcServer_Gate_Client::OnSend(ITcpClient* pSender, Socket socket, const BYTE* pData, int iLength){// {{{2
-	return HR_OK;
-}// }}}2
+		if(size >= NET_PACKET_MAX_SIZE){ return ReturnError("net_type_size is bigger than buffer. Please reset buffer size(recompile)."); }
+		if(size == 0){ return ReturnError("size is zero."); }
 
-EnHandleResult RpcServer_Gate_Client::OnReceive(ITcpClient* pSender, Socket socket, int iLength){// {{{2
-	ITcpPullClient* client = ITcpPullClient::FromS(pSender);
-	if(client != NULL){
-		uint32_t size(0); 
-		while(iLength > 0 && iLength >= sizeof(uint32_t) && FR_OK == client->Peek((Byte*)&size, sizeof(size))){
-			if((size + sizeof(size)) > (uint32_t)iLength){ break; }
-
-			if(size >= NET_PACKET_MAX_SIZE){ return ReturnError("net_type_size is bigger than buffer. Please reset buffer size(recompile)."); }
-			if(size == 0){ return ReturnError("size is zero."); }
-			if(FR_OK != client->Fetch((Byte*)&size, sizeof(size))){ return ReturnError("Fail to fetch head."); }
-
-			BinaryMemory binary;
-			binary.reserve(size);
-			if(FR_OK != client->Fetch((Byte*)binary.CopyMemoryFromOut(size), size)){ 
-				return ReturnError("Fail to fetch body."); 
+		NetInfo net_info;
+		RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
+		if(packet != NULL){
+			if(!rpc_server_gate_->GetMessageFromBinary(binary, offset, net_info, packet)){
+				return ReturnError("Error : GetMessageFromBinary.");
 			}
 
-			iLength -= (size + sizeof(size));
+			for(int index = 0; index < net_info.sockets_size(); ++index){
+				LinkID link_id = rpc_server_gate_->BuildLinkID(gate_id(), net_info.sockets(index));
+				rpc_server_gate_->UpdateHeartTime(link_id);
 
-			NetInfo net_info;
-			RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
-			if(packet != NULL){
-				if(!rpc_server_gate_->GetMessageFromBinary(binary, net_info, packet)){
-					return ReturnError("Error : GetMessageFromBinary.");
+				if(net_info.net_type() == eNetType_Gate){
+					RpcPacketPtr packet_tmp(new RpcPacket(*packet));
+					packet_tmp->link_id = link_id;
+					rpc_server_gate_->PushMessageToQueue(packet_tmp);
 				}
-
-				for(int index = 0; index < net_info.sockets_size(); ++index){
-					LinkID link_id = rpc_server_gate_->BuildLinkID(gate_id(), net_info.sockets(index));
-					rpc_server_gate_->UpdateHeartTime(link_id);
-
-					if(net_info.net_type() == eNetType_Gate){
-						RpcPacketPtr packet_tmp(new RpcPacket(*packet));
-						packet_tmp->link_id = link_id;
-						rpc_server_gate_->PushMessageToQueue(packet_tmp);
-					}
-					else if(net_info.net_type() == eNetType_Heart){
-						return SendHeart(link_id) ? HR_OK : HR_ERROR;
-					}
+				else if(net_info.net_type() == eNetType_Heart){
+					return SendHeart(link_id);
 				}
-			}
-			else{
-				RPC_DEBUG_E("Fail to new packet.");
-				return HR_ERROR;
 			}
 		}
+		else{
+			RPC_DEBUG_E("Fail to new packet.");
+			return false;
+		}
+
+		read_size += size + sizeof(size);
+		offset += size + sizeof(size);
 	}
-	return HR_OK;
+	return true;
 }// }}}2
 
-EnHandleResult RpcServer_Gate_Client::OnClose(ITcpClient* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode){// {{{2
-	return HR_OK;
+void RpcServer_Gate_Client::OnConnect(Socket socket){// {{{2
 }// }}}2
 
-EnHandleResult RpcServer_Gate_Client::ReturnError(const std::string& err_info){// {{{2
+void RpcServer_Gate_Client::OnDisconnect(Socket sockfd){// {{{2
+	;
+}//}}}2
+
+void RpcServer_Gate_Client::OnClose(){// {{{2
+}// }}}2
+
+void RpcServer_Gate_Client::OnError(const NetError& net_error){// {{{2
+}// }}}2
+
+bool RpcServer_Gate_Client::ReturnError(const std::string& err_info){// {{{2
 	RPC_DEBUG_E(err_info);
-	Stop();
-	return HR_ERROR; 
+	return false; 
 }// }}}2
 
 bool RpcServer_Gate_Client::SendHeart(LinkID link_id){// {{{2
@@ -315,7 +303,7 @@ bool RpcServer_Gate_Client::SendHeart(LinkID link_id){// {{{2
 	net_info.add_sockets(rpc_server_gate_->GetSocket(link_id));
 	BinaryMemoryPtr binary = rpc_server_gate_->BuildBinaryFromMessage(net_info);
 	if(binary != NULL){
-		return net_client_->Send((const Byte*)binary->buffer(), binary->size());
+		return net_client_->Send(binary);
 	}
 	return false;
 }// }}}2
@@ -389,10 +377,6 @@ bool RpcServer_Gate::Send(const vector<LinkID>& link_ids, const RpcMeta& meta, c
 		}
 	}
 	return ret;
-}// }}}2
-
-bool RpcServer_Gate::GetRemoteAddress(LinkID link_id, std::string& ip, Port& port){// {{{2
-	return false;
 }// }}}2
 
 bool RpcServer_Gate::IsChannel()const{// {{{2

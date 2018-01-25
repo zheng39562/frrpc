@@ -4,4 +4,6 @@ out/
 *.o
 core.*
 *.log
+client
+server
 

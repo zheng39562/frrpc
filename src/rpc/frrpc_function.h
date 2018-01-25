@@ -13,15 +13,13 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/dynamic_message.h>
 
-#include "fr_public/pub_memory.h"
+#include "frpublic/pub_memory.h"
 #include "frrpc_define.h"
 
 namespace frrpc{
 
 void AskToQuit();
 bool IsAskedToQuit();
-
-google::protobuf::Message* CreateProtoMessage(const google::protobuf::Descriptor* type);
 
 // T must a number(int long shor etc).
 template <typename Integer>

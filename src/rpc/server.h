@@ -12,9 +12,9 @@
 #include <thread>
 #include <functional>
 
-#include "fr_template/lock_queue.hpp"
-#include "fr_public/pub_memory.h"
-#include "fr_public/pub_tool.h"
+#include "frtemplate/lock_queue.hpp"
+#include "frpublic/pub_memory.h"
+#include "frpublic/pub_tool.h"
 #include "closure.h"
 #include "net_server.h"
 

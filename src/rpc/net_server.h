@@ -15,13 +15,14 @@
 
 #include "rpc_base_net.h"
 #include "frrpc_define.h"
+#include "frnet/frnet_interface.h"
 
 namespace frrpc{
 namespace network{
 
 // class RpcServer_Server {{{1
 
-class RpcServer_Server : public RpcBaseNet, public CTcpPullServerListener{
+class RpcServer_Server : public RpcBaseNet, public frnet::NetListen{
 	public:
 		RpcServer_Server(const std::string &ip, Port port);
 		RpcServer_Server(const RpcServer_Server &ref)=delete;
@@ -42,15 +43,20 @@ class RpcServer_Server : public RpcBaseNet, public CTcpPullServerListener{
 		virtual bool Send(const RpcMeta& meta, const google::protobuf::Message& body);
 		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
 		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
-
-		virtual bool GetRemoteAddress(LinkID link_id, std::string& ip, Port& port);
 	private:
-		virtual EnHandleResult OnPrepareListen(ITcpServer* pSender, SOCKET soListen);
-		virtual EnHandleResult OnAccept(ITcpServer* pSender, Socket socket, SOCKET soClient);
-		virtual EnHandleResult OnSend(ITcpServer* pSender, Socket socket, const BYTE* pData, int iLength);
-		virtual EnHandleResult OnReceive(ITcpServer* pSender, Socket socket, int iLength);
-		virtual EnHandleResult OnClose(ITcpServer* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode);
-		virtual EnHandleResult OnShutdown(ITcpServer* pSender);
+		// param[out] read_size : 
+		//	delete date size when function finish. Set 0 If you do not want delete any data.
+		//
+		// retval : close client if return is false.
+		virtual bool OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, size_t& read_size);
+
+		virtual void OnConnect(Socket sockfd);
+		virtual void OnDisconnect(Socket sockfd);
+
+		virtual void OnClose();
+
+		// include all error : read, write, disconnect and so on.
+		virtual void OnError(const frnet::NetError& net_error);
 
 		virtual bool IsChannel()const;
 
@@ -58,11 +64,11 @@ class RpcServer_Server : public RpcBaseNet, public CTcpPullServerListener{
 		inline LinkID BuildLinkID(Socket socket)const { return (LinkID)socket; }
 		inline Socket GetSocket(LinkID link_id)const { return (Socket)link_id; }
 
-		EnHandleResult ReturnError(Socket socket, const std::string& error_info);
+		bool ReturnError(Socket socket, const std::string& error_info);
 
 		virtual bool SendHeart(LinkID link_id);
 	private:
-		CTcpPullServerPtr server_;
+		frnet::NetServer* server_;
 		std::string ip_;
 		Port port_;
 		NetInfo net_info_;
@@ -73,7 +79,7 @@ class RpcServer_Server : public RpcBaseNet, public CTcpPullServerListener{
 
 class RpcServer_Gate;
 // class RpcServer_Gate_Client {{{2
-class RpcServer_Gate_Client : public CTcpPullClientListener{
+class RpcServer_Gate_Client : public frnet::NetListen{
 	public:
 		RpcServer_Gate_Client(RpcServer_Gate* rpc_server_gate, GateID gate_id, const std::string& ip, Port);
 		RpcServer_Gate_Client(const RpcServer_Gate_Client& ref)=delete;
@@ -92,15 +98,23 @@ class RpcServer_Gate_Client : public CTcpPullClientListener{
 
 		bool SendHeart(LinkID link_id);
 	private:
-		virtual EnHandleResult OnConnect(ITcpClient* pSender, Socket socket);
-		virtual EnHandleResult OnSend(ITcpClient* pSender, Socket socket, const BYTE* pData, int iLength);
-		virtual EnHandleResult OnReceive(ITcpClient* pSender, Socket socket, int iLength);
-		virtual EnHandleResult OnClose(ITcpClient* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode);
+		// param[out] read_size : 
+		//	delete date size when function finish. Set 0 If you do not want delete any data.
+		//
+		// retval : close client if return is false.
+		virtual bool OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, size_t& read_size);
 
-		// 
-		EnHandleResult ReturnError(const std::string& err_info); 
+		virtual void OnConnect(Socket sockfd);
+		virtual void OnDisconnect(Socket sockfd);
+
+		virtual void OnClose();
+
+		// include all error : read, write, disconnect and so on.
+		virtual void OnError(const frnet::NetError& net_error);
+
+		bool ReturnError(const std::string& err_info); 
 	private:
-		CTcpPullClientPtr net_client_;
+		frnet::NetClient* net_client_;
 		GateID gate_id_;
 		std::string ip_;
 		Port port_;
@@ -129,8 +143,6 @@ class RpcServer_Gate : public RpcBaseNet{
 		virtual bool Send(const RpcMeta& meta, const google::protobuf::Message& body);
 		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
 		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
-
-		virtual bool GetRemoteAddress(LinkID link_id, std::string& ip, Port& port);
 
 		inline LinkID BuildLinkID(GateID gate_id, Socket socket)const{ return socket * pow(10, gate_length_) + gate_id; }
 		inline Socket GetSocket(LinkID link_id)const{ return link_id % (uint32_t)pow(10, gate_length_); }

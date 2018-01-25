@@ -12,8 +12,8 @@
 #include "net.pb.h"
 #include "frrpc.pb.h"
 
-#include "fr_template/lock_queue.hpp"
-#include "fr_public/pub_memory.h"
+#include "frtemplate/lock_queue.hpp"
+#include "frpublic/pub_memory.h"
 #include "frrpc_define.h"
 #include "controller.h"
 
@@ -31,7 +31,7 @@ class RpcPacket{
 			rpc_meta = ref.rpc_meta;
 
 			if(binary == NULL){
-				binary = fr_public::BinaryMemoryPtr(new fr_public::BinaryMemory());
+				binary = frpublic::BinaryMemoryPtr(new frpublic::BinaryMemory());
 			}
 			*binary = *ref.binary;
 		}
@@ -41,7 +41,7 @@ class RpcPacket{
 			rpc_meta = ref.rpc_meta;
 
 			if(binary == NULL){
-				binary = fr_public::BinaryMemoryPtr(new fr_public::BinaryMemory());
+				binary = frpublic::BinaryMemoryPtr(new frpublic::BinaryMemory());
 			}
 			*binary = *ref.binary;
 		}
@@ -56,7 +56,7 @@ class RpcPacket{
 		LinkID link_id;
 		eNetEvent net_event;
 		RpcMeta rpc_meta;
-		fr_public::BinaryMemoryPtr binary;
+		frpublic::BinaryMemoryPtr binary;
 };
 typedef std::shared_ptr<RpcPacket> RpcPacketPtr;
 // }}}1
@@ -93,20 +93,17 @@ class RpcBaseNet{
 		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body)=0;
 		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body)=0;
 
-		// Read address by link_id;
-		virtual bool GetRemoteAddress(LinkID link_id, std::string& ip, Port& port)=0;
-
 		void FetchMessageQueue(std::queue<RpcPacketPtr>& packet_queue, int32_t max_queue_size);
 	protected:
 		// parse binary, set net_info and packet.
 		// notice : packet has many variables. It only set net_event, rpc_meta and binary.
 		// 
 		// binary struct : net_size(2) + net_info + meta_size(2) + meta_size + binary
-		bool GetMessageFromBinary(const fr_public::BinaryMemory& binary, NetInfo& net_info, RpcPacketPtr& packet);
+		bool GetMessageFromBinary(const frpublic::BinaryMemory& binary, int32_t offset, NetInfo& net_info, RpcPacketPtr& packet);
 		// Build binary.
 		// body is a abstract name that means request or response.
-		fr_public::BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info);
-		fr_public::BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& meta, const google::protobuf::Message& body);
+		frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info);
+		frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& meta, const google::protobuf::Message& body);
 
 		//
 		void PushMessageToQueue(const RpcPacketPtr& packet);
@@ -128,7 +125,7 @@ class RpcBaseNet{
 		virtual bool IsChannel()const =0;
 		virtual bool SendHeart(LinkID link_id)=0;
 	private:
-		fr_template::LockQueue<RpcPacketPtr> packet_queue_;
+		frtemplate::LockQueue<RpcPacketPtr> packet_queue_;
 
 		bool heart_check_;
 		std::thread thread_heart_time_;

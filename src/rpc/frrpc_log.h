@@ -9,11 +9,11 @@
 #ifndef _frrpc_log_H
 #define _frrpc_log_H
 
-#include "fr_public/pub_log.h"
+#include "frpublic/pub_log.h"
 
 namespace frrpc{
 	bool IsOpenLog();
-	void OpenLog(const std::string& log_path, fr_public::eLogLevel log_level, uint32_t file_size = 10 * 1024 * 1024);
+	void OpenLog(const std::string& log_path, frpublic::eLogLevel log_level, uint32_t file_size = 10 * 1024 * 1024);
 	void CloseLog();
 } // namespace frrpc
 

@@ -15,13 +15,14 @@
 
 #include "rpc_base_net.h"
 #include "frrpc_define.h"
+#include "frnet/frnet_interface.h"
 
 namespace frrpc{
 namespace network{
 
 // class RpcChannel_Server {{{1
 
-class RpcChannel_Server : public RpcBaseNet, public CTcpPullClientListener{
+class RpcChannel_Server : public RpcBaseNet, public frnet::NetListen{
 	public:
 		RpcChannel_Server(const std::string &ip, Port port);
 		RpcChannel_Server(const RpcChannel_Server &ref)=delete;
@@ -45,17 +46,26 @@ class RpcChannel_Server : public RpcBaseNet, public CTcpPullClientListener{
 
 		virtual bool GetRemoteAddress(LinkID link_id, std::string& ip, Port& port);
 	private:
-		virtual EnHandleResult OnConnect(ITcpClient* pSender, Socket socket);
-		virtual EnHandleResult OnSend(ITcpClient* pSender, Socket socket, const BYTE* pData, int iLength);
-		virtual EnHandleResult OnReceive(ITcpClient* pSender, Socket socket, int iLength);
-		virtual EnHandleResult OnClose(ITcpClient* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode);
+		// param[out] read_size : 
+		//	delete date size when function finish. Set 0 If you do not want delete any data.
+		//
+		// retval : close client if return is false.
+		virtual bool OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, size_t& read_size);
 
-		EnHandleResult ReturnError(const std::string& error_info);
+		virtual void OnConnect(Socket sockfd);
+		virtual void OnDisconnect(Socket sockfd);
+
+		virtual void OnClose();
+
+		// include all error : read, write, disconnect and so on.
+		virtual void OnError(const frnet::NetError& net_error);
+
+		bool ReturnError(const std::string& error_info);
 	private:
 		virtual bool IsChannel()const;
 		virtual bool SendHeart(LinkID link_id);
 	private:
-		CTcpPullClientPtr net_client_;
+		frnet::NetClient* net_client_;
 		std::string ip_;
 		Port port_;
 		NetInfo net_info_;

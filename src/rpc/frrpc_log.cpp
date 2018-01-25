@@ -8,7 +8,7 @@
 **********************************************************/
 #include "frrpc_log.h"
 
-using namespace fr_public;
+using namespace frpublic;
 
 namespace frrpc{ 
 

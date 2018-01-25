@@ -8,11 +8,11 @@
 **********************************************************/
 #include "rpc_base_net.h"
 
-#include "fr_public/pub_tool.h"
+#include "frpublic/pub_tool.h"
 #include "frrpc_function.h"
 
 using namespace std;
-using namespace fr_public;
+using namespace frpublic;
 using namespace google::protobuf;
 
 namespace frrpc{
@@ -38,10 +38,10 @@ RpcBaseNet::~RpcBaseNet(){ // {{{2
 	}
 }// }}}2
 
-bool RpcBaseNet::GetMessageFromBinary(const BinaryMemory& binary, NetInfo& net_info, RpcPacketPtr& packet){// {{{2
-	uint32_t cur_offset(0);
+bool RpcBaseNet::GetMessageFromBinary(const BinaryMemory& binary, int offset, NetInfo& net_info, RpcPacketPtr& packet){// {{{2
+	uint32_t cur_offset(sizeof(PacketSize) + offset);
 
-	NetInfoSize net_size = *(NetInfoSize*)binary.buffer();
+	NetInfoSize net_size = *(NetInfoSize*)binary.buffer(cur_offset);
 	cur_offset += sizeof(NetInfoSize);
 	if(net_size > 0){
 		if(!net_info.ParseFromArray(binary.buffer(cur_offset), net_size)){

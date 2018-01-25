@@ -9,7 +9,7 @@
 #include "channel.h"
 
 using namespace std;
-using namespace fr_public;
+using namespace frpublic;
 using namespace frrpc::network;
 using namespace google::protobuf;
 

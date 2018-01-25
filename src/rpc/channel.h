@@ -146,6 +146,7 @@ class Channel : public google::protobuf::RpcChannel {
 };
 // }}}1
 
+/*
 // template function list : ReigiterCallBack {{{2
 // Zero
 inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void (*function)(google::protobuf::Message*)){
@@ -287,6 +288,7 @@ inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDes
 }
 
 // }}}2
+*/
 
 // }}}1
 

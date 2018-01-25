@@ -12,8 +12,6 @@
 #include "frrpc_log.h"
 
 // typedef {{{2
-typedef uint32_t Port;
-typedef uint8_t Byte;
 typedef uint64_t LinkID;
 typedef uint64_t RpcRequestId;
 
@@ -24,15 +22,6 @@ typedef uint32_t RpcBodySize;
 
 typedef uint32_t GateID;
 
-#define __HP_SOCKET
-#ifdef __HP_SOCKET
-#include "hpsocket/SocketInterface.h"
-#include "hpsocket/HPSocket.h"
-
-typedef CONNID Socket;
-#else
-typedef int Socket;
-#endif
 // }}}2
 
 // enum {{{2

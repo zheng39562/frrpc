@@ -9,14 +9,15 @@
 #include "net_channel.h"
 
 using namespace std;
-using namespace fr_public;
+using namespace frpublic;
+using namespace frnet;
 using namespace google::protobuf;
 
 namespace frrpc{
 namespace network{
 
 RpcChannel_Server::RpcChannel_Server(const std::string &ip, Port port)// {{{2
-	:net_client_(this),
+	:net_client_(CreateNetClient(this)),
 	 ip_(ip),
 	 port_(port),
 	 net_info_()
@@ -49,7 +50,7 @@ bool RpcChannel_Server::Send(const RpcMeta& meta, const Message& body){// {{{2
 
 	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info_, meta, body);
 	if(binary != NULL){
-		ret = net_client_->Send((const Byte*)binary->buffer(), binary->size());
+		ret = net_client_->Send(binary);
 		if(!ret){
 			RPC_DEBUG_E("Fail to send binary.");
 		}
@@ -71,64 +72,58 @@ bool RpcChannel_Server::GetRemoteAddress(LinkID link_id, std::string& ip, Port& 
 	return true;
 }// }}}2
 
-EnHandleResult RpcChannel_Server::OnConnect(ITcpClient* pSender, Socket socket){// {{{2
-	return HR_OK;
-}// }}}2
+bool RpcChannel_Server::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){// {{{2
+	int32_t offset(0);
+	while((binary.size() - read_size) > sizeof(PacketSize)){
+		PacketSize size(*(const PacketSize*)binary.buffer()); 
+		if(size + sizeof(size) > (binary.size() - read_size)){ 
+			return true; 
+		}
 
-EnHandleResult RpcChannel_Server::OnSend(ITcpClient* pSender, Socket socket, const BYTE* pData, int iLength){// {{{2
-	return HR_OK;
-}// }}}2
+		if(size >= NET_PACKET_MAX_SIZE){ return ReturnError("net_type_size is bigger than buffer. Please reset buffer size(recompile)."); }
+		if(size == 0){ return ReturnError("size is zero."); }
 
-EnHandleResult RpcChannel_Server::OnReceive(ITcpClient* pSender, Socket socket, int iLength){// {{{2
-	ITcpPullClient* client = ITcpPullClient::FromS(pSender);
-
-	if(client != NULL){
-		uint32_t size(0); 
-		while(iLength > 0 && iLength >= sizeof(uint32_t) && FR_OK == client->Peek((Byte*)&size, sizeof(size))){
-			if((size + sizeof(size)) > (uint32_t)iLength){ break; }
-
-			if(size >= NET_PACKET_MAX_SIZE){ return ReturnError("net_type_size is bigger than buffer. Please reset buffer size(recompile)."); }
-			if(size == 0){ return ReturnError("size is zero."); }
-			if(FR_OK != client->Fetch((Byte*)&size, sizeof(size))){ return ReturnError("Fail to fetch head."); }
-
-			BinaryMemory binary;
-			binary.reserve(size);
-			if(FR_OK != client->Fetch((Byte*)binary.CopyMemoryFromOut(size), size)){ 
-				return ReturnError("Fail to fetch body."); 
+		NetInfo net_info;
+		RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
+		if(packet != NULL){
+			if(!GetMessageFromBinary(binary, offset, net_info, packet)){
+				return ReturnError("Error : GetMessageFromBinary.");
 			}
 
-			iLength -= (size + sizeof(size));
-
-			NetInfo net_info;
-			RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
-			if(packet != NULL){
-				if(!GetMessageFromBinary(binary, net_info, packet)){
-					return ReturnError("Error : GetMessageFromBinary.");
-				}
-
-				if(net_info.net_type() == net_info_.net_type()){
-					PushMessageToQueue(packet);
-				}
-				else{
-					return ReturnError("net type is wrong.");
-				}
+			if(net_info.net_type() == net_info_.net_type()){
+				PushMessageToQueue(packet);
 			}
 			else{
-				RPC_DEBUG_E("Fail to new packet.");
-				return HR_ERROR;
+				return ReturnError("net type is wrong.");
 			}
 		}
+		else{
+			RPC_DEBUG_E("Fail to new packet.");
+			return false;
+		}
+
+		read_size += size + sizeof(size);
+		offset += size + sizeof(size);
 	}
-	return HR_OK;
+	return true;
 }// }}}2
 
-EnHandleResult RpcChannel_Server::OnClose(ITcpClient* pSender, Socket socket, EnSocketOperation enOperation, int iErrorCode){// {{{2
-	return HR_OK;
+void RpcChannel_Server::OnConnect(Socket socket){// {{{2
 }// }}}2
 
-EnHandleResult RpcChannel_Server::ReturnError(const std::string& error_info){// {{{2
+void RpcChannel_Server::OnDisconnect(Socket socket){// {{{2
+}// }}}2
+
+void RpcChannel_Server::OnClose(){// {{{2
+}// }}}2
+
+void RpcChannel_Server::OnError(const NetError& net_error){// {{{2
+	NET_DEBUG_E("Receive error : [" << net_error.err_no << "]");
+}//}}}2
+
+bool RpcChannel_Server::ReturnError(const std::string& error_info){// {{{2
 	RPC_DEBUG_E(error_info);
-	Stop();
+	return false;
 }// }}}2
 
 bool RpcChannel_Server::IsChannel()const{// {{{2
@@ -141,7 +136,7 @@ bool RpcChannel_Server::SendHeart(LinkID link_id){// {{{2
 
 	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info_);
 	if(binary != NULL){
-		if(!net_client_->Send((const Byte*)binary->buffer(), binary->size())){
+		if(!net_client_->Send(binary)){
 			RPC_DEBUG_E("Fail to send binary.");
 			return false;
 		}

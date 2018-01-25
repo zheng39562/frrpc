@@ -9,7 +9,7 @@
 #include "server.h"
 
 using namespace std;
-using namespace fr_public;
+using namespace frpublic;
 using namespace google::protobuf;
 using namespace frrpc::network;
 

@@ -12,7 +12,7 @@
 #include <signal.h> 
 
 using namespace std;
-using namespace fr_public;
+using namespace frpublic;
 using namespace google::protobuf;
 
 namespace frrpc{
@@ -58,11 +58,6 @@ void CheckRegister(sighandler_t* ret){
 void RegisterQuitSignal(){
 	sighandler_t ret_ini = signal(SIGINT, SignalHandle);
 	CheckRegister(&ret_ini);
-}
-
-static google::protobuf::DynamicMessageFactory frrpc_func_s_message_factory_;
-google::protobuf::Message* CreateProtoMessage(const google::protobuf::Descriptor* type){
-	return frrpc_func_s_message_factory_.GetPrototype(type)->New();
 }
 
 }// namespace frrpc{
