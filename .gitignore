@@ -1,6 +1,7 @@
 build/
 .frrpc_config/
 out/
+pb/
 *.o
 core.*
 *.log

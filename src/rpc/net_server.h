@@ -43,7 +43,8 @@ class RpcServer_Server : public RpcBaseNet, public frnet::NetListen{
 		virtual bool Send(const RpcMeta& meta, const google::protobuf::Message& body);
 		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
 		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
-	private:
+
+	protected:
 		// param[out] read_size : 
 		//	delete date size when function finish. Set 0 If you do not want delete any data.
 		//
@@ -58,6 +59,7 @@ class RpcServer_Server : public RpcBaseNet, public frnet::NetListen{
 		// include all error : read, write, disconnect and so on.
 		virtual void OnError(const frnet::NetError& net_error);
 
+	private:
 		virtual bool IsChannel()const;
 
 		// * Is socket always positive? 
@@ -97,7 +99,7 @@ class RpcServer_Gate_Client : public frnet::NetListen{
 		bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
 
 		bool SendHeart(LinkID link_id);
-	private:
+	protected:
 		// param[out] read_size : 
 		//	delete date size when function finish. Set 0 If you do not want delete any data.
 		//
@@ -112,7 +114,9 @@ class RpcServer_Gate_Client : public frnet::NetListen{
 		// include all error : read, write, disconnect and so on.
 		virtual void OnError(const frnet::NetError& net_error);
 
+	private:
 		bool ReturnError(const std::string& err_info); 
+
 	private:
 		frnet::NetClient* net_client_;
 		GateID gate_id_;

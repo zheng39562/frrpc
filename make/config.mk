@@ -1,6 +1,5 @@
-COMMON_LIBRARY=-luuid -lpthread -lrt -ldl -lboost_filesystem -lboost_regex -lfr_public
+COMMON_LIBRARY=-luuid -lpthread -lrt -ldl -lboost_filesystem -lboost_regex -lfrpublic -lprotobuf -lfrnet_epoll
 COMMON_SQL_LIBRARY=-lfr_sql -lmysqlcppconn 
-COMMON_RPC_LIBRARY=-lprotobuf
 COMMON_LIBRARY_PATH=-L/usr/ -L../../build/lib/
 COMMON_INCLUDE=-I../../src/
 COMMON_MACRO=-D__LINUX -D__FRNET_EPOLL
@@ -23,7 +22,21 @@ OUTPUT_EXAMPLE_PATH=../../out
 
 .PHONY: clean all install example
 
+# ------------------------------------------------------------------------------------------------------------------------
 # 匹配规则
+# --- pb pattern ---  (还为生效，需要进一步研究makefile的匹配规则，期望能够在out中自动生成，而不是独立一个目录)
+./${OUTPUT_TEMPORARY_PATH}/../pb/%.o : %.cpp
+	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+
+./${OUTPUT_TEMPORARY_PATH}/../pb/%.o : %.cc
+	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+
+./${OUTPUT_TEMPORARY_PATH}/../pb/%.o : %.c
+	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+# --- common pattern --- 
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.cpp
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
 	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
@@ -35,6 +48,8 @@ OUTPUT_EXAMPLE_PATH=../../out
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.c
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
 	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+# ------------------------------------------------------------------------------------------------------------------------
+
 
 FREEDOM_COMMON_IP=127.0.0.1
 FREEDOM_WORLD_PORT=12000
@@ -78,5 +93,13 @@ define BuildEngineScript
 
 	$(call BuildStopScript, $(1))
 endef
+
+# build protobuf file.
+define BuildPBFile
+	protoc --proto_path=../pb/ --cpp_out=../pb/ ../pb/frrpc.proto	
+	protoc --proto_path=../pb/ --cpp_out=../pb/ ../pb/net.proto	
+	protoc --proto_path=../pb/ --cpp_out=../pb/ ../pb/route.proto	
+endef
+
 
 

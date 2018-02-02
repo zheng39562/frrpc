@@ -1,3 +1,7 @@
+## 进度
+	* route版本对server版本造成影响，导致暂时无法使用
+	* route程序完成，rpc针对route的支持未完成.
+
 ## 介绍
 	* 这是一个和常规rpc不太一样的rpc库。
 	  看过grpc和brpc后，发现在游戏场景下，常规的req-res的方式的rpc并不适用或使用场景严重受限。
@@ -10,7 +14,7 @@
 		  并且考虑到网关很可能需要了解协议结构，所以干脆提供一个简单的网关。
 		* 网关是可选的，并非必须.
 
-### client
+### channel
 	* 支持最简单的同步读写
 	* 增加异步的回调函数注册机制。使用option的方式来进行.
 		* 在Channel添加到stub时，默认开启所有的消息的接收(但设为null,只有真正设置回调后才有效)。
@@ -26,7 +30,7 @@
 	* 通过server-description和method-description来发送消息
 		* SendFunc(method, response);	// method中包含着server-description。但具体参数以易用性为准
 
-### gate
+### route
 	* 支持直接的消息分发：需要server先请求注册
 		* server and client 需要提供对应的支持机制
 	* 支持某类服务的client状态标识机制。

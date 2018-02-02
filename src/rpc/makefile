@@ -31,6 +31,5 @@ clean :
 	rm -rf ${BUILD_INCLUDE_PATH}/${PROJECT_NAME}
 
 proto : 
-	protoc --proto_path=./ --cpp_out=./ frrpc.proto	
-	protoc --proto_path=./ --cpp_out=./ net.proto	
+	$(call BuildPBFile)
 

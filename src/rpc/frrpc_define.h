@@ -9,20 +9,9 @@
 #ifndef _frrpc_define_H
 #define _frrpc_define_H
 
+#include "public_define.h"
 #include "frrpc_log.h"
 
-// typedef {{{2
-typedef uint64_t LinkID;
-typedef uint64_t RpcRequestId;
-
-typedef uint32_t PacketSize;
-typedef uint16_t NetInfoSize;
-typedef uint16_t RpcMetaSize;
-typedef uint32_t RpcBodySize;
-
-typedef uint32_t GateID;
-
-// }}}2
 
 // enum {{{2
 
@@ -38,9 +27,6 @@ typedef uint32_t GateID;
 // marco number {{{2
 #define RPC_REQUEST_ID_NULL 0
 #define RPC_LINK_ID_NULL 0
-
-#define NET_HEART_TIMEOUT				60
-#define NET_PACKET_MAX_SIZE				4 * 1024
 // }}}2
 
 // common class {{{2

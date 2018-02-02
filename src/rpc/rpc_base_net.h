@@ -79,11 +79,7 @@ class RpcBaseNet{
 		// disconnect is link_id
 		virtual bool Disconnect(LinkID link_id)=0;
 
-		// hpsocket version has a bug : Send big data by multiple thread to the same socket.It does not ensure data order . 
-		// Big that means : GetSocketBufferSize()
 		// TODO:
-		//	Will Changes library of network.
-		//
 		// About override: 
 		//	* Channel must implement Send(binary) 
 		//	* Server must implement Send(link, binary)
