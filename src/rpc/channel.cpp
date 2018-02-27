@@ -20,7 +20,8 @@ Channel::Channel(const ChannelOption& option)// {{{2
 	 request_callback_(),
 	 default_callback_(),
 	 option_(option),
-	 init_success_(false)
+	 init_success_(false),
+	 net_event_cb_()
 { 
 	;
 }// }}}2
@@ -57,10 +58,14 @@ void Channel::Stop(){// {{{2
 void Channel::CallMethod(const MethodDescriptor* method, RpcController* controller, const Message* request, Message* response, Closure* done){// {{{2
 	if(!init_success_){ RPC_DEBUG_E("Initialization is failed. Please check and new again."); return; }
 
+	frrpc::Controller* cntl = dynamic_cast<frrpc::Controller*>(controller);
+	if(cntl == NULL){
+		RPC_DEBUG_E("Fail to convert cntl point. contrller is wrong."); return ;
+	}
+
 	RpcRequestId request_id(++request_id_);
 	if(request_callback_.find(request_id) != request_callback_.end()){
-		RPC_DEBUG_W("request id is repeated.");
-		return ;
+		RPC_DEBUG_W("request id is repeated."); return ;
 	}
 	request_callback_.insert(make_pair(request_id, RequestCallBack(done, response)));
 
@@ -70,9 +75,10 @@ void Channel::CallMethod(const MethodDescriptor* method, RpcController* controll
 	rpc_meta.mutable_rpc_request_meta()->set_request_id(request_id);
 	rpc_meta.set_compress_type(option_.compress_type);
 
-	if(!rpc_net_->Send(rpc_meta, *request)){
-		RPC_DEBUG_E("Fail to send request.");
-		return ;
+	cntl->set_service_name(method->service()->name());
+
+	if(!rpc_net_->Send(cntl, rpc_meta, *request)){
+		RPC_DEBUG_E("Fail to send request."); return ;
 	}
 }// }}}2
 
@@ -101,29 +107,43 @@ void Channel::RunCallback(uint32_t run_cb_times){// {{{2
 
 		RPC_DEBUG_P("Receive packet.");
 
-		if(IsRequestMode(package)){
-			RPC_DEBUG_P("request.");
+		if(package->net_event == eNetEvent_Method){
+			if(IsRequestMode(package)){
+				RPC_DEBUG_P("request.");
 
-			auto request_callback_iter = request_callback_.find(package->rpc_meta.rpc_request_meta().request_id());
-			if(request_callback_iter == request_callback_.end()){
-				RPC_DEBUG_E("Can not find request id [" << package->rpc_meta.rpc_request_meta().request_id() << "]");
-				return ;
+				auto request_callback_iter = request_callback_.find(package->rpc_meta.rpc_request_meta().request_id());
+				if(request_callback_iter == request_callback_.end()){
+					RPC_DEBUG_E("Can not find request id [" << package->rpc_meta.rpc_request_meta().request_id() << "]");
+					return ;
+				}
+
+				request_callback_iter->second.response->ParseFromArray(package->binary->buffer(), package->binary->size());
+				request_callback_iter->second.callback->Run();
+				request_callback_.erase(request_callback_iter);
 			}
-
-			request_callback_iter->second.response->ParseFromArray(package->binary->buffer(), package->binary->size());
-			request_callback_iter->second.callback->Run();
-			request_callback_.erase(request_callback_iter);
+			else{
+				auto default_callback_iter = default_callback_.find(package->rpc_meta.service_name() + to_string(package->rpc_meta.method_index()));
+				if(default_callback_iter != default_callback_.end()){
+					RPC_DEBUG_E("Can not find key [" << package->rpc_meta.service_name() << to_string(package->rpc_meta.method_index()) << "]");
+					return ;
+				}
+				
+				default_callback_iter->second.response->ParseFromArray(package->binary->buffer(), package->binary->size());
+				default_callback_iter->second.callback->Run();
+				default_callback_.erase(default_callback_iter);
+			}
 		}
 		else{
-			auto default_callback_iter = default_callback_.find(package->rpc_meta.service_name() + to_string(package->rpc_meta.method_index()));
-			if(default_callback_iter != default_callback_.end()){
-				RPC_DEBUG_E("Can not find key [" << package->rpc_meta.service_name() << to_string(package->rpc_meta.method_index()) << "]");
-				return ;
+			if(net_event_cb_ != NULL){
+				Controller* cntl = new Controller();
+				cntl->set_net_event(package->net_event);
+				if(cntl == NULL){
+					RPC_DEBUG_E("Fail to create controller."); continue;
+				}
+
+				net_event_cb_(cntl);
+				DELETE_POINT_IF_NOT_NULL(cntl);
 			}
-			
-			default_callback_iter->second.response->ParseFromArray(package->binary->buffer(), package->binary->size());
-			default_callback_iter->second.callback->Run();
-			default_callback_.erase(default_callback_iter);
 		}
 	}
 }// }}}2

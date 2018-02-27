@@ -16,6 +16,7 @@
 #include "pb/net.pb.h"
 #include "pb/route.pb.h"
 #include "frnet/frnet_interface.h"
+#include "common/rpc_heart.h"
 
 #include "route_define.h"
 
@@ -65,8 +66,14 @@ class RpcRoute : public frnet::NetListen{
 		RpcRoute();
 		virtual ~RpcRoute();
 	public:
-		inline bool Start(const std::string& ip, Port port){ return net_server_->Start(ip, port); }
-		inline bool Stop(){ return net_server_->Stop(); }
+		inline bool Start(const std::string& ip, Port port){ 
+			if(net_server_->Start(ip, port)){ rpc_heart_.RunServer(net_server_); return true; }
+			else{ return false; } 
+		}
+		inline bool Stop(){ 
+			rpc_heart_.StopHeartCheck();
+			return net_server_->Stop(); 
+		}
 	protected:
 		// param[out] read_size : 
 		//	delete date size when function finish. Set 0 If you do not want delete any data.
@@ -99,8 +106,11 @@ class RpcRoute : public frnet::NetListen{
 		bool AddService(Socket service_socket, const std::string& service_name, const std::string& service_addr);
 		bool DeleteService(Socket service_socket);
 		inline bool IsServiceSocket(Socket socket)const{ return service_socket_2name_.find(socket) != service_socket_2name_.end(); };
+
+		bool SendEventNotice_Disconnect(Socket disconnect_socket);
 	private:
 		frnet::NetServer* net_server_;
+		RpcHeart rpc_heart_;
 
 		std::mutex mutex_service_2info_;
 		std::map<ServiceName, RouteServiceInfosPtr> service_2info_;

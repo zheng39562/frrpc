@@ -92,6 +92,7 @@ namespace route{
 
 RpcRoute::RpcRoute()// {{{2
 	:net_server_(CreateNetServer(this)),
+	 rpc_heart_(),
 	 mutex_service_2info_(),
 	 service_2info_(),
 	 service_socket_2name_(),
@@ -109,6 +110,8 @@ RpcRoute::~RpcRoute(){// {{{2
 }//}}}2
 
 bool RpcRoute::OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, size_t& read_size){// {{{2
+	rpc_heart_.UpdateSocket(sockfd);
+
 	int32_t cur_offset(0);
 	frrpc::network::NetInfo net_info;
 	while((binary.size() - cur_offset) > sizeof(PacketSize)){
@@ -122,8 +125,7 @@ bool RpcRoute::OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, si
 		}
 
 		if(!GetNetInfo(binary, cur_offset, net_info)){
-			DEBUG_E("Fail to parse binary. From (socket)[" << sockfd << "]");
-			return false;
+			DEBUG_E("Fail to parse binary. From (socket)[" << sockfd << "]"); return false;
 		}
 
 		bool ret(false);
@@ -143,10 +145,12 @@ bool RpcRoute::OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, si
 }//}}}2
 
 void RpcRoute::OnConnect(Socket sockfd){// {{{2
-	;
+	rpc_heart_.AddSocket(sockfd);
 }//}}}2
 
 void RpcRoute::OnDisconnect(Socket sockfd){// {{{2
+	rpc_heart_.DelSocket(sockfd);
+
 	if(IsServiceSocket(sockfd)){
 		DeleteService(sockfd);
 	}
@@ -162,6 +166,12 @@ void RpcRoute::OnDisconnect(Socket sockfd){// {{{2
 			}
 		}
 	};
+
+	lock_guard<mutex> lock(mutex_event_disconnect_);
+
+	if(!SendEventNotice_Disconnect(sockfd)){
+		DEBUG_E("Fail to send notice(disconnect)");
+	}
 
 	DeleteSlefOperator(event_dis_notice_2listen_, event_dis_listen_2notice_, sockfd);
 	DeleteSlefOperator(event_dis_listen_2notice_, event_dis_notice_2listen_, sockfd);
@@ -191,8 +201,7 @@ bool RpcRoute::GetNetInfo(const frpublic::BinaryMemory& binary, int32_t offset, 
 	cur_offset += sizeof(NetInfoSize);
 	if(net_size > 0){
 		if(!net_info.ParseFromArray(binary.buffer(cur_offset), net_size)){
-			DEBUG_E("Fail to parse net_info.");
-			return false;
+			DEBUG_PB_PARSE_FAILURE("net info."); return false;
 		}
 	}
 	return true;
@@ -203,7 +212,7 @@ bool RpcRoute::RouteProcess(Socket socket, const frpublic::BinaryMemory& binary,
 	if(route_net_info.ParseFromString(net_info.net_binary())){
 		route_net_info.set_source_socket(socket);
 
-		if(route_net_info.is_channel()){
+		if(route_net_info.is_channel_packet()){
 			lock_guard<mutex> local_lock(mutex_service_2info_);
 
 			std::map<ServiceName, RouteServiceInfosPtr> service_2info_;
@@ -216,8 +225,7 @@ bool RpcRoute::RouteProcess(Socket socket, const frpublic::BinaryMemory& binary,
 		}
 
 		if(!route_net_info.SerializeToString(net_info.mutable_net_binary())){
-			DEBUG_E("Fail to serialize route net info.");
-			return false;
+			DEBUG_PB_SERIALIZE_FAILURE("new info"); return false;
 		}
 
 		BinaryMemoryPtr send_packet = BuildSendPacket(binary, offset, net_info);
@@ -227,10 +235,8 @@ bool RpcRoute::RouteProcess(Socket socket, const frpublic::BinaryMemory& binary,
 			}
 		}
 	}
-	else{
-		DEBUG_E("Fail to parse route net info.");
-		return false;
-	}
+	else{ DEBUG_PB_PARSE_FAILURE("route net info."); return false; }
+
 	return true;
 }//}}}2
 
@@ -245,10 +251,7 @@ bool RpcRoute::CommandProcess(Socket socket, const frpublic::BinaryMemory& binar
 			default : DEBUG_E("Unkonw route command [" << route_request.cmd() << "]"); return false;
 		}
 	}
-	else{
-		DEBUG_E("Fail to parse route request.");
-		return false;
-	}
+	else{ DEBUG_PB_PARSE_FAILURE("route request."); return false; }
 
 	return true;
 }//}}}2
@@ -280,8 +283,7 @@ frpublic::BinaryMemoryPtr RpcRoute::BuildSendPacket(const frpublic::BinaryMemory
 bool RpcRoute::EventRegister(Socket socket, const std::string& binary){// {{{2
 	EventNotice event_notice;
 	if(!event_notice.ParseFromString(binary)){
-		DEBUG_E("Fail to parse event notice.");
-		return false;
+		DEBUG_PB_PARSE_FAILURE("event notice."); return false;
 	}
 
 	switch(event_notice.type()){
@@ -302,14 +304,12 @@ bool RpcRoute::EventCancel(Socket socket, const std::string& binary){// {{{2
 		}
 	};
 
-	eEventNotice_Disconnect event_notice_disconnect;
+	EventNotice_Disconnect event_notice_disconnect;
 	if(!event_notice_disconnect.ParseFromString(binary)){
-		DEBUG_E("Fail to parse event notice disconnect. socket [" << socket << "]");
-		return false;
+		DEBUG_PB_PARSE_FAILURE("event notice disconnect. socket [" << socket << "]"); return false;
 	}
 
 	std::lock_guard<mutex> local_lock(mutex_event_disconnect_);
-
 	EraseOperator(event_dis_notice_2listen_, socket, event_notice_disconnect.socket());
 	EraseOperator(event_dis_listen_2notice_, event_notice_disconnect.socket(), socket);
 	return true;
@@ -325,10 +325,9 @@ bool RpcRoute::EventNoticeDisconnect(Socket socket, const std::string& binary){/
 		a_2b_iter->second.insert(b);
 	};
 
-	eEventNotice_Disconnect event_notice_disconnect;
+	EventNotice_Disconnect event_notice_disconnect;
 	if(!event_notice_disconnect.ParseFromString(binary)){
-		DEBUG_E("Fail to parse event notice disconnect. socket [" << socket << "]");
-		return false;
+		DEBUG_PB_PARSE_FAILURE("event notice disconnect. socket [" << socket << "]"); return false;
 	}
 
 	std::lock_guard<mutex> local_lock(mutex_event_disconnect_);
@@ -341,8 +340,7 @@ bool RpcRoute::EventNoticeDisconnect(Socket socket, const std::string& binary){/
 bool RpcRoute::ServiceRegister(Socket socket, const std::string& binary){// {{{2
 	RouteServiceInfo route_service_info;
 	if(!route_service_info.ParseFromString(binary)){
-		DEBUG_E("Fail to parse route service info. [" << socket << "]");
-		return false;
+		DEBUG_PB_PARSE_FAILURE("route service info. socket [" << socket << "]"); return false;
 	}
 
 	return AddService(socket, route_service_info.name(), route_service_info.addr());
@@ -384,6 +382,48 @@ bool RpcRoute::DeleteService(Socket service_socket){// {{{2
 	return true;
 }//}}}2
 
+bool RpcRoute::SendEventNotice_Disconnect(Socket disconnect_socket){//{{{2
+	frrpc::route::EventNotice_Disconnect notice_disconnect;
+	notice_disconnect.set_socket(disconnect_socket);
+
+	frrpc::route::EventNotice event_notice;
+	event_notice.set_type(eRouteEventType_Disconnect);
+	if(!notice_disconnect.SerializeToString(event_notice.mutable_event_binary())){
+		DEBUG_PB_SERIALIZE_FAILURE("event notice disconnect."); return false;
+	}
+
+	frrpc::route::RouteResponse route_response;
+	route_response.set_cmd(eRouteCmd_EventNotice);
+	if(!event_notice.SerializeToString(route_response.mutable_response_binary())){
+		DEBUG_PB_SERIALIZE_FAILURE("event notice. "); return false;
+	}
+
+	frrpc::network::NetInfo net_info;
+	net_info.set_net_type(eNetType_RouteCmd);
+	if(!route_response.SerializeToString(net_info.mutable_net_binary())){
+		DEBUG_PB_SERIALIZE_FAILURE("route response."); return false;
+	}
+
+	PacketSize size(net_info.ByteSize());
+
+	BinaryMemoryPtr packet(new BinaryMemory());
+	packet->add((void*)&size, sizeof(size));
+	if(!net_info.SerializeToArray(packet->CopyMemoryFromOut(size), size)){
+		DEBUG_PB_SERIALIZE_FAILURE("net info."); return false;
+	}
+
+	bool ret(true);
+	auto event_dis_listen_2notice_iter = event_dis_listen_2notice_.find(disconnect_socket);
+	if(event_dis_listen_2notice_iter != event_dis_listen_2notice_.end()){
+		for(auto& socket : event_dis_listen_2notice_iter->second){
+			if(!net_server_->Send(socket, packet)){
+				DEBUG_E("fail to send notice of disconnect.");
+				ret = false;
+			}
+		}
+	}
+	return ret;
+}//}}}2
 
 } // namepsace route
 } // namepsace frrpc

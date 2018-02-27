@@ -9,8 +9,8 @@
 #ifndef _net_base_H
 #define _net_base_H
 
-#include "net.pb.h"
-#include "frrpc.pb.h"
+#include "pb/net.pb.h"
+#include "pb/frrpc.pb.h"
 
 #include "frtemplate/lock_queue.hpp"
 #include "frpublic/pub_memory.h"
@@ -61,6 +61,7 @@ class RpcPacket{
 typedef std::shared_ptr<RpcPacket> RpcPacketPtr;
 // }}}1
 
+
 // class RpcBaseNet{{{1
 //
 // Example:
@@ -79,15 +80,12 @@ class RpcBaseNet{
 		// disconnect is link_id
 		virtual bool Disconnect(LinkID link_id)=0;
 
-		// TODO:
-		// About override: 
-		//	* Channel must implement Send(binary) 
-		//	* Server must implement Send(link, binary)
-		//	* If Drived class does not need either function, it need return false. It tell user call it is wrong.
+		// A packet include three part.net information, rpc meta, response.
 		//
-		virtual bool Send(const RpcMeta& meta, const google::protobuf::Message& body)=0;
-		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body)=0;
-		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body)=0;
+		// Controller has network information. Base Controller satisfy most of the scene.
+		// If You need more.You has two choice : Add variable in base controller, or Inherit base controller.
+		//
+		virtual bool Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body)=0;
 
 		void FetchMessageQueue(std::queue<RpcPacketPtr>& packet_queue, int32_t max_queue_size);
 	protected:
@@ -104,33 +102,19 @@ class RpcBaseNet{
 		//
 		void PushMessageToQueue(const RpcPacketPtr& packet);
 
-		// heart check is a choice.If you need, call RunHeartCheck()
-		// Attention : If you use it. you need add/delete/update by youself(In drived class)
-		// these function has mutex. So you can call them in multiple thread. 
-		//
-		// Recall Run or Stop is not useless.
-		//
-		// unit of timeout is second. Use Sleep function, so it is not very accurate.
-		void RunHeartCheck(time_t timeout);
-		void StopHeartCheck();
-
-		void DelLinkID(LinkID link_id);
-		void AddLinkID(LinkID link_id);
-		void UpdateHeartTime(LinkID link_id);
-	private:
-		virtual bool IsChannel()const =0;
-		virtual bool SendHeart(LinkID link_id)=0;
+		bool GetAndCheckPacketSize(const void* buffer, PacketSize& size);
 	private:
 		frtemplate::LockQueue<RpcPacketPtr> packet_queue_;
-
-		bool heart_check_;
-		std::thread thread_heart_time_;
-		std::mutex mutex_heart_time_;
-		std::set<LinkID> link_wait_heart_array_;
-		std::mutex mutex_id_array_;
-		std::set<LinkID> link_id_array_;
 };
 // }}}1
+
+class RpcNetServer : public RpcBaseNet{
+	public:
+		RpcNetServer()=default;
+		virtual ~RpcNetServer()=default;
+	public:
+		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr)=0;
+};
 
 } // namespace network
 } // namespace frrpc

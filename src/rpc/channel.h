@@ -15,7 +15,7 @@
 #include <queue>
 
 #include <google/protobuf/service.h>
-#include "net.pb.h"
+#include "pb/net.pb.h"
 #include "rpc_base_net.h"
 #include "net_channel.h"
 #include "controller.h"
@@ -103,13 +103,17 @@ class Channel : public google::protobuf::RpcChannel {
 
 		void Stop();
 
+		// Is you want receive network event. You need register a callback.
+		// Event does not include method of rpc.
+		inline void RegisterNetEvent(std::function<void(const Controller* cntl)> net_event_cb){ net_event_cb_ = net_event_cb; }
+
 		// Call the given method of the remote service.  The signature of this
 		// procedure looks the same as Service::CallMethod(), but the requirements
 		// are less strict in one important way:  the request and response objects
 		// need not be of any specific class as long as their descriptors are
 		// method->input_type() and method->output_type().
 		// you need free(delete) all pointer if arg is pointer.
-		virtual void CallMethod(const google::protobuf::MethodDescriptor* method, google::protobuf::RpcController* controller, const google::protobuf::Message* request, google::protobuf::Message* response, google::protobuf::Closure* done);
+		virtual void CallMethod(const google::protobuf::MethodDescriptor* method, google::protobuf::RpcController* cntl, const google::protobuf::Message* request, google::protobuf::Message* response, google::protobuf::Closure* done);
 
 		// Register permanet cb function.If Call this twice,last will been used.
 		// You need delete argv by youself except response.
@@ -143,6 +147,7 @@ class Channel : public google::protobuf::RpcChannel {
 		std::map<std::string, RegisterCallBack> default_callback_;
 		ChannelOption option_;
 		std::atomic<RpcRequestId> request_id_;
+		std::function<void(const Controller* cntl)> net_event_cb_;
 };
 // }}}1
 

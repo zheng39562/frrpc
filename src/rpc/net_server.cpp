@@ -16,7 +16,11 @@
 using namespace std;
 using namespace frpublic;
 using namespace frnet;
+using namespace frrpc::route;
 using namespace google::protobuf;
+
+
+#define DEBUG_PB_PARSE_FAILURE(name) RPC_DEBUG_E("Fail to parse " << name)
 
 namespace frrpc{
 namespace network{
@@ -28,7 +32,8 @@ RpcServer_Server::RpcServer_Server(const std::string &ip, Port port)// {{{2
 	:server_(CreateNetServer(this)),
 	 ip_(ip),
 	 port_(port),
-	 net_info_()
+	 net_info_(),
+	 rpc_heart_()
 { 
 	net_info_.set_net_type(eNetType_Server); 
 }// }}}2
@@ -47,8 +52,8 @@ bool RpcServer_Server::Start(){// {{{2
 		return false;
 	}
 	RPC_DEBUG_I("Listen [" << ip_ << ":" << port_ << "]");
-
-	RunHeartCheck(NET_HEART_TIMEOUT);
+	
+	rpc_heart_.RunServer(server_);
 	return true;
 }// }}}2
 
@@ -57,9 +62,9 @@ bool RpcServer_Server::Stop(){// {{{2
 		RPC_DEBUG_E("Fail to stop server.");
 		return false;
 	}
-	RPC_DEBUG_I("stop server.");
+	rpc_heart_.StopHeartCheck();
 
-	StopHeartCheck();
+	RPC_DEBUG_I("stop server.");
 	return true;
 }// }}}2
 
@@ -67,22 +72,14 @@ bool RpcServer_Server::Disconnect(LinkID link_id){// {{{2
 	return server_->Disconnect(BuildLinkID(link_id));
 }// }}}2
 
-bool RpcServer_Server::Send(const RpcMeta& meta, const Message& body){// {{{2
-	return false;
-}// }}}2
-
-bool RpcServer_Server::Send(LinkID link_id, const RpcMeta& meta, const Message& body){// {{{2
-	vector<LinkID> link_ids({link_id});
-	return Send(link_ids, meta, body);
-}// }}}2
-
-bool RpcServer_Server::Send(const vector<LinkID>& link_ids, const RpcMeta& meta, const Message& body){// {{{2
+bool RpcServer_Server::Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body){//{{{2
 	bool ret(false);
 
 	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info_, meta, body);
 	if(binary != NULL){
 		ret = true;
-		for(auto& link_id : link_ids){
+		for(int index = 0; index < cntl->link_size(); ++index){
+			LinkID link_id = cntl->link_id(index);
 			if(!server_->Send(GetSocket(link_id), binary)){
 				RPC_DEBUG_E("Fail to send body. Detail : link_id [" << link_id << "] body size [" << binary->size() << "]");
 				ret = false;
@@ -94,10 +91,14 @@ bool RpcServer_Server::Send(const vector<LinkID>& link_ids, const RpcMeta& meta,
 		RPC_DEBUG_E("Fail to build binary(bianry is null).");
 	}
 	return ret;
-}// }}}2
+}//}}}2
+
+bool RpcServer_Server::RegisterService(const std::string& service_name, const std::string& service_addr){//{{{2
+	return true;
+}//}}}2
 
 bool RpcServer_Server::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){// {{{2
-	UpdateHeartTime(socket);
+	rpc_heart_.UpdateSocket(socket);
 
 	int32_t offset(0);
 	while((binary.size() - read_size) > sizeof(PacketSize)){
@@ -119,9 +120,6 @@ bool RpcServer_Server::OnReceive(Socket socket, const frpublic::BinaryMemory& bi
 			if(net_info.net_type() == net_info_.net_type()){
 				PushMessageToQueue(packet);
 			}
-			else{
-				return SendHeart(packet->link_id);
-			}
 		}
 		else{
 			RPC_DEBUG_E("Fail to new packet.");
@@ -136,12 +134,12 @@ bool RpcServer_Server::OnReceive(Socket socket, const frpublic::BinaryMemory& bi
 
 void RpcServer_Server::OnConnect(Socket socket){// {{{2
 	PushMessageToQueue(RpcPacketPtr(new RpcPacket(BuildLinkID(socket), eNetEvent_Connection)));
-	AddLinkID(BuildLinkID(socket));
+	rpc_heart_.AddSocket(socket);
 }// }}}2
 
 void RpcServer_Server::OnDisconnect(Socket socket){// {{{2
 	PushMessageToQueue(RpcPacketPtr(new RpcPacket(BuildLinkID(socket), eNetEvent_Disconnection)));
-	DelLinkID(BuildLinkID(socket));
+	rpc_heart_.DelSocket(socket);
 }// }}}2
 
 void RpcServer_Server::OnClose(){// {{{2
@@ -152,25 +150,11 @@ void RpcServer_Server::OnError(const NetError& net_error){// {{{2
 	NET_DEBUG_D("Receive error [" << net_error.err_no << "].");
 }//}}}2
 
-bool RpcServer_Server::IsChannel()const{// {{{2
-	return false;
-}// }}}2
-
 bool RpcServer_Server::ReturnError(Socket socket, const std::string& error_info){// {{{2
 	RPC_DEBUG_E(error_info << " Disconnect socket [" << socket << "]");
 	Disconnect(BuildLinkID(socket));
 	return false;
 };// }}}2
-
-bool RpcServer_Server::SendHeart(LinkID link_id){// {{{2
-	NetInfo net_info;
-	net_info.set_net_type(eNetType_Heart);
-	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info);
-	if(binary != NULL){
-		return server_->Send(BuildLinkID(link_id), binary);
-	}
-	return false;
-}// }}}2
 
 // }}}1
 
@@ -182,7 +166,8 @@ RpcServer_Gate_Client::RpcServer_Gate_Client(RpcServer_Gate* rpc_server_gate, Ga
 	 gate_id_(gate_id),
 	 ip_(ip),
 	 port_(port),
-	 rpc_server_gate_(rpc_server_gate)
+	 rpc_server_gate_(rpc_server_gate),
+	 rpc_heart_()
 {
 	 memset(receive_buffer_, 0, sizeof(receive_buffer_));
 }// }}}2
@@ -200,32 +185,40 @@ bool RpcServer_Gate_Client::Start(){// {{{2
 		RPC_DEBUG_E("Fail to start[" << ip_ << ":" << port_ << "]");
 		return false;
 	}
+	rpc_heart_.RunClient(net_client_);
 	return true;
 }// }}}2
 
 bool RpcServer_Gate_Client::Stop(){// {{{2
+	rpc_heart_.StopHeartCheck();
 	return net_client_->Stop();
 }// }}}2
 	
-bool RpcServer_Gate_Client::Send(LinkID link_id, const RpcMeta& meta, const Message& body){// {{{2
-	return Send({link_id}, meta, body);
-}// }}}2
+bool RpcServer_Gate_Client::Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body){// {{{2
+	RouteNetInfo route_net_info;
+	route_net_info.set_is_channel_packet(false);
+	route_net_info.set_service_name(cntl->service_name());
+	route_net_info.set_service_addr(cntl->service_addr());
 
-bool RpcServer_Gate_Client::Send(const vector<LinkID>& link_ids, const RpcMeta& meta, const Message& body){// {{{2
-	bool ret(false);
-
-	NetInfo net_info;
-	for(auto& link_id : link_ids){
+	route_net_info.clear_target_sockets();
+	for(int index = 0; index < cntl->link_size(); ++index){
+		LinkID link_id(cntl->link_id(index));
 		if(gate_id() == rpc_server_gate_->GetGateID(link_id)){
-			net_info.add_sockets(rpc_server_gate_->GetSocket(link_id));
+			route_net_info.add_target_sockets(rpc_server_gate_->GetSocket(link_id));
 		}
 	}
-	if(net_info.sockets_size() > 0){
-		BinaryMemoryPtr binary = rpc_server_gate_->BuildBinaryFromMessage(net_info, meta, body);
-		if(binary != NULL){
-			ret = net_client_->Send(binary);
-			if(!ret){
-				RPC_DEBUG_E("Fail to send binary.");
+
+	bool ret(false);
+	if(route_net_info.target_sockets_size() > 0){
+		NetInfo net_info;
+		net_info.set_net_type(eNetType_Route);
+		if(route_net_info.SerializeToString(net_info.mutable_net_binary())){
+			BinaryMemoryPtr binary = rpc_server_gate_->BuildBinaryFromMessage(net_info, meta, body);
+			if(binary != NULL){
+				ret = net_client_->Send(binary);
+				if(!ret){
+					RPC_DEBUG_E("Fail to send binary.");
+				}
 			}
 		}
 	}
@@ -234,7 +227,38 @@ bool RpcServer_Gate_Client::Send(const vector<LinkID>& link_ids, const RpcMeta& 
 	}
 
 	return ret;
-}// }}}2
+}//}}}2
+
+bool RpcServer_Gate_Client::RegisterService(const std::string& service_name, const std::string& service_addr){//{{{2
+	frrpc::route::RouteServiceInfo route_service_info;
+	route_service_info.set_name(service_name);
+	route_service_info.set_addr(service_addr);
+
+	frrpc::route::RouteRequest route_request;
+	route_request.set_cmd(eRouteCmd_ServiceRegister);
+	if(!route_service_info.SerializeToString(route_request.mutable_request_binary())){
+		RPC_DEBUG_E("Fail to serialize route service info.");
+		return false;
+	}
+	
+	frrpc::network::NetInfo net_info;
+	net_info.set_net_type(eNetType_RouteCmd);
+	if(!route_request.SerializeToString(net_info.mutable_net_binary())){
+		RPC_DEBUG_E("Fail to serialize route request.");
+		return false;
+	}
+
+	PacketSize size(net_info.ByteSize());
+
+	BinaryMemoryPtr register_packet(new BinaryMemory());
+	register_packet->add((void*)&size, sizeof(size));
+	if(!net_info.SerializeToArray(register_packet->CopyMemoryFromOut(size), size)){
+		RPC_DEBUG_E("Fail to serialize net info.");
+		return false;
+	}
+
+	return net_client_->Send(register_packet);
+}//}}}2
 
 bool RpcServer_Gate_Client::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){// {{{2
 	int32_t offset(0);
@@ -254,18 +278,11 @@ bool RpcServer_Gate_Client::OnReceive(Socket socket, const frpublic::BinaryMemor
 				return ReturnError("Error : GetMessageFromBinary.");
 			}
 
-			for(int index = 0; index < net_info.sockets_size(); ++index){
-				LinkID link_id = rpc_server_gate_->BuildLinkID(gate_id(), net_info.sockets(index));
-				rpc_server_gate_->UpdateHeartTime(link_id);
-
-				if(net_info.net_type() == eNetType_Gate){
-					RpcPacketPtr packet_tmp(new RpcPacket(*packet));
-					packet_tmp->link_id = link_id;
-					rpc_server_gate_->PushMessageToQueue(packet_tmp);
-				}
-				else if(net_info.net_type() == eNetType_Heart){
-					return SendHeart(link_id);
-				}
+			switch(net_info.net_type()){
+				case eNetType_Route: if(!ReceiveRoutePacket(net_info, packet)){ return false; } break;
+				case eNetType_RouteCmd: if(!PerformRouteCmd(net_info)){ return false; } break;
+				case eNetType_Heart: break;
+				default: RPC_DEBUG_E("unknow net type [" << net_info.net_type() << "]"); return false;
 			}
 		}
 		else{
@@ -297,16 +314,53 @@ bool RpcServer_Gate_Client::ReturnError(const std::string& err_info){// {{{2
 	return false; 
 }// }}}2
 
-bool RpcServer_Gate_Client::SendHeart(LinkID link_id){// {{{2
-	NetInfo net_info;
-	net_info.set_net_type(eNetType_Heart);
-	net_info.add_sockets(rpc_server_gate_->GetSocket(link_id));
-	BinaryMemoryPtr binary = rpc_server_gate_->BuildBinaryFromMessage(net_info);
-	if(binary != NULL){
-		return net_client_->Send(binary);
+bool RpcServer_Gate_Client::ReceiveRoutePacket(NetInfo& net_info, RpcPacketPtr& packet){//{{{2
+	frrpc::route::RouteNetInfo route_net_info;
+	if(route_net_info.ParseFromString(net_info.net_binary())){
+		for(int index = 0; index < route_net_info.target_sockets_size(); ++index){
+			RpcPacketPtr packet_tmp(new RpcPacket(*packet));
+			packet_tmp->link_id = rpc_server_gate_->BuildLinkID(gate_id(), route_net_info.target_sockets(index));
+
+			rpc_server_gate_->PushMessageToQueue(packet_tmp);
+		}
+	}
+	return true;
+}//}}}2
+
+bool RpcServer_Gate_Client::PerformRouteCmd(NetInfo& net_info){//{{{2
+	frrpc::route::RouteResponse route_response;
+	if(route_response.ParseFromString(net_info.net_binary())){
+		switch(route_response.cmd()){
+			case eRouteCmd_EventRegister: RPC_DEBUG_E("This cmd(EventRegister) has not response."); return false;
+			case eRouteCmd_EventCancel: RPC_DEBUG_E("This cmd(EventCancel) has not response."); return false;
+			case eRouteCmd_EventNotice: return ReceiveEventNotice(route_response);
+			case eRouteCmd_ServiceRegister: RPC_DEBUG_E("This cmd(ServerRegister) has not response."); return false;
+			case eRouteCmd_ServiceCancel: RPC_DEBUG_E("This cmd(ServerRegister) has not response."); return false;
+			default: RPC_DEBUG_E("unknow route command [" << route_response.cmd() << "]."); return false;
+		}
 	}
 	return false;
-}// }}}2
+}//}}}2
+
+bool RpcServer_Gate_Client::ReceiveEventNotice(frrpc::route::RouteResponse route_response){//{{{2
+	frrpc::route::EventNotice event_notice;
+	if(!event_notice.ParseFromString(route_response.response_binary())){
+		DEBUG_PB_PARSE_FAILURE("event notice."); return false;
+	}
+
+	switch(event_notice.type()){
+		case eRouteEventType_Disconnect:{ 
+			frrpc::route::EventNotice_Disconnect event_notice_disconnect;
+			if(!event_notice_disconnect.ParseFromString(event_notice.event_binary())){
+				DEBUG_PB_PARSE_FAILURE("event notice of disconnect."); return false;
+			}
+			
+			rpc_server_gate_->PushMessageToQueue(RpcPacketPtr(new RpcPacket(rpc_server_gate_->BuildLinkID(gate_id(), event_notice_disconnect.socket()), eNetEvent_Disconnection)));
+			break;
+		}
+	}
+	return true;
+}//}}}2
 
 RpcServer_Gate::RpcServer_Gate(const std::vector<std::tuple<const std::string&, Port> >& gate_list)// {{{2
 	:gate_client_list_(),
@@ -349,47 +403,30 @@ bool RpcServer_Gate::Disconnect(LinkID link_id){// {{{2
 	return true;
 }// }}}2
 
-bool RpcServer_Gate::Send(const RpcMeta& meta, const Message& body){// {{{2
-	return false;
-}// }}}2
+bool RpcServer_Gate::Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body){// {{{2
+	if(cntl == NULL){ RPC_DEBUG_E("controller is null."); return false; }
 
-bool RpcServer_Gate::Send(LinkID link_id, const RpcMeta& meta, const Message& body){// {{{2
-	GateID gate_id(GetGateID(link_id));
-	if(gate_id < gate_client_list_.size()){
-		return gate_client_list_[gate_id]->Send(link_id, meta, body);
-	}
-	return false;
-}// }}}2
-
-bool RpcServer_Gate::Send(const vector<LinkID>& link_ids, const RpcMeta& meta, const Message& body){// {{{2
 	set<GateID> gate_ids;
-	for(auto& link_id : link_ids){
-		gate_ids.insert(GetGateID(link_id));
+	for(int index = 0; index < cntl->link_size(); ++index){
+		gate_ids.insert(GetGateID(cntl->link_id(index)));
 	}
 
-	bool ret(false);
-	if(!gate_ids.empty()){
-		ret = true;
-		for(auto& gate_id : gate_ids){
-			if(gate_id < gate_client_list_.size()){
-				ret &= gate_client_list_[gate_id]->Send(link_ids, meta, body);
-			}
+	bool ret(true);
+	for(auto& gate_id : gate_ids){
+		if(gate_id < gate_client_list_.size()){
+			ret &= gate_client_list_[gate_id]->Send(cntl, meta, body);
 		}
 	}
 	return ret;
 }// }}}2
 
-bool RpcServer_Gate::IsChannel()const{// {{{2
-	return false;
-}// }}}2
-
-bool RpcServer_Gate::SendHeart(LinkID link_id){// {{{2
-	GateID gate_id(GetGateID(link_id));
-	if(gate_id < gate_client_list_.size()){
-		return gate_client_list_[gate_id]->SendHeart(link_id);
+bool RpcServer_Gate::RegisterService(const std::string& service_name, const std::string& service_addr){//{{{2
+	bool ret(true);
+	for(auto& gate_client : gate_client_list_){
+		ret &= gate_client->RegisterService(service_name, service_addr);
 	}
-	return false;
-}// }}}2
+	return ret;
+}//}}}2
 
 // }}}1
 

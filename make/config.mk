@@ -17,8 +17,8 @@ BUILD_EXECUTE_PATH=../../build/bin
 OUTPUT_LIB_PATH=/usr/lib64
 OUTPUT_INCLUDE_PATH=/usr/local/include
 OUTPUT_EXECUTE_PATH=/usr/local/bin
-OUTPUT_TEMPORARY_PATH=../../out
-OUTPUT_EXAMPLE_PATH=../../out
+OUTPUT_TEMPORARY_PATH=../../out/out
+OUTPUT_EXAMPLE_PATH=../../out/out
 
 .PHONY: clean all install example
 

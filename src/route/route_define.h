@@ -14,5 +14,8 @@
 #define SOCKET_NULL 0
 #define ROUTE_INDEX_NULL -1
 
+#define DEBUG_PB_SERIALIZE_FAILURE(pb_struct_name) DEBUG_E("Fail to serialize " << pb_struct_name)
+#define DEBUG_PB_PARSE_FAILURE(pb_struct_name) DEBUG_E("Fail to parse " << pb_struct_name)
+
 #endif 
 

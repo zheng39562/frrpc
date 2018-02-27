@@ -4,12 +4,14 @@ OPTIONAL_CFLAGS=-fPIC
 
 PROJECT_NAME=frrpc
 PROJECT_OBJECTS= \
+	./$(OUTPUT_TEMPORARY_PATH)/../pb/frrpc.pb.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../pb/net.pb.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../pb/route.pb.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../common/rpc_heart.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./channel.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./controller.o \
-	./$(OUTPUT_TEMPORARY_PATH)/./frrpc.pb.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./frrpc_function.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./frrpc_log.o \
-	./$(OUTPUT_TEMPORARY_PATH)/./net.pb.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./net_channel.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./net_server.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./rpc_base_net.o \

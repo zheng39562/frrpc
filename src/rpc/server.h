@@ -27,12 +27,17 @@ namespace frrpc{
 class ServerOption{
 	public:
 		// Default : single thread and gate module.
-		ServerOption():work_thread_num(1) { ; }
+		ServerOption():work_thread_num(1),service_addr() { ; }
+		ServerOption(size_t _work_thread_num):work_thread_num(_work_thread_num),service_addr() { ; }
+		ServerOption(const std::string& _service_addr):work_thread_num(1),service_addr(_service_addr) { ; }
+		ServerOption(size_t _work_thread_num, const std::string& _service_addr):work_thread_num(_work_thread_num),service_addr(_service_addr) { ; }
 		~ServerOption()=default;
 	public:
-		uint32_t work_thread_num;
+		size_t work_thread_num;
+		std::string service_addr;
 };
 // }}}1
+
 
 // class RpcMessage{{{1
 // Rpc Message is used to CallMethod.
@@ -61,10 +66,10 @@ std::shared_ptr<RpcMessage> RpcMessagePtr;
 
 // }}}1
 
+
 // class Server {{{1
 class Server{
 	public:
-		Server();
 		Server(ServerOption& option);
 		~Server();
 	public:
@@ -82,10 +87,7 @@ class Server{
 		// Event does not include method of rpc.
 		inline void RegisterNetEvent(std::function<void(const Controller* cntl)> net_event_cb){ net_event_cb_ = net_event_cb; }
 
-		inline bool SendRpcMessage(LinkID link_id, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response){
-			return SendRpcMessage({link_id}, service_name, method_name, response);
-		}
-		bool SendRpcMessage(const std::vector<LinkID>& link_ids, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
+		bool SendRpcMessage(frrpc::Controller* cntl, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
 	private:
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Server);
 
@@ -96,7 +98,7 @@ class Server{
 		google::protobuf::Service* GetServiceFromName(const std::string& service_name);
 		bool ParseBinary(const frrpc::network::RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service** service);
 	private:
-		frrpc::network::RpcBaseNet* rpc_net_;
+		frrpc::network::RpcNetServer* rpc_net_server_;
 		ServerOption option_;
 		std::map<std::string, ::google::protobuf::Service*> name_2service_;
 		std::vector<std::thread> work_threads_;

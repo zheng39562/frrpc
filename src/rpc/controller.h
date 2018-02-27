@@ -13,15 +13,18 @@
 
 #include "closure.h"
 #include "frrpc_define.h"
+#include "pb/net.pb.h"
 
 namespace frrpc{
 
-enum eNetEvent{
-	eNetEvent_Method = 0,
-	eNetEvent_Connection,
-	eNetEvent_Disconnection,
-	eNetEvent_End
-};
+namespace controller{
+namespace inside{
+	template <typename T> void AssignmentPoint(T* dest, T source){
+		if(dest == NULL){ dest = new T; }
+		*dest = source;
+	}
+}
+}
 
 // An RpcController mediates a single method call.  The primary purpose of
 // the controller is to provide a way to manipulate settings specific to the
@@ -89,20 +92,42 @@ class Controller : public google::protobuf::RpcController {
 		virtual void NotifyOnCancel(google::protobuf::Closure* callback);
 
 		// custom variables;
+		//
+		void Clear();
 		
-		// link_id
-		inline void set_link_id(LinkID link_id){ link_id_ = link_id; }
-		inline LinkID link_id()const{ return link_id_; };
+		// link_id : One link has one id. This is unique.
+		// different means in different net. 
+		//
+		inline void clear_link(){ new_link(); link_ids_->clear(); }
+		inline void push_link(LinkID link_id){ new_link(); link_ids_->push_back(link_id); }
+		inline void set_link(LinkID link_id){ clear_link(); link_ids_->push_back(link_id); }
+		inline LinkID link_id(int index = 0)const{ return (link_ids_ != NULL && index >= 0 && link_ids_->size() > index) ? link_ids_->at(index) : RPC_LINK_ID_NULL; }
+		inline size_t link_size()const{ return link_ids_ != NULL ? link_ids_->size() : 0; }
 
 		// type of message.
-		inline void set_net_event(eNetEvent net_event){ net_event_ = net_event; }
-		inline eNetEvent net_event()const{ return net_event_; }
+		inline void set_net_event(frrpc::network::eNetEvent net_event){ controller::inside::AssignmentPoint(net_event_, net_event); }
+		inline frrpc::network::eNetEvent net_event()const{ return net_event_ != NULL ? *net_event_ : frrpc::network::eNetEvent_Invalid; }
+
+		// service name 
+		inline const std::string& service_name(){ if(service_name_ == NULL){ set_service_name(""); } return *service_name_; }
+		inline void set_service_name(const std::string& service_name){ controller::inside::AssignmentPoint(service_name_, service_name); }
+
+		// service addr
+		inline std::string& service_addr(){ if(service_addr_ == NULL){ set_service_addr(""); } return *service_addr_; }
+		inline void set_service_addr(const std::string& service_addr){ controller::inside::AssignmentPoint(service_addr_, service_addr); }
+
+	private:
+		inline void new_link(){ if(link_ids_ == NULL){ link_ids_ = new std::vector<LinkID>(); } }
 
 	private:
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Controller);
+
 	private:
-		LinkID link_id_;
-		eNetEvent net_event_;
+		frrpc::network::eNetEvent* net_event_;
+
+		std::vector<LinkID>* link_ids_;
+		std::string* service_name_;
+		std::string* service_addr_;
 };
 
 }// namespace frrpc

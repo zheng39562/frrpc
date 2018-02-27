@@ -16,13 +16,15 @@
 #include "rpc_base_net.h"
 #include "frrpc_define.h"
 #include "frnet/frnet_interface.h"
+#include "common/rpc_heart.h"
+#include "pb/route.pb.h"
 
 namespace frrpc{
 namespace network{
 
 // class RpcServer_Server {{{1
 
-class RpcServer_Server : public RpcBaseNet, public frnet::NetListen{
+class RpcServer_Server : public RpcNetServer, public frnet::NetListen{
 	public:
 		RpcServer_Server(const std::string &ip, Port port);
 		RpcServer_Server(const RpcServer_Server &ref)=delete;
@@ -36,13 +38,9 @@ class RpcServer_Server : public RpcBaseNet, public frnet::NetListen{
 		// disconnect is link_id
 		virtual bool Disconnect(LinkID link_id);
 
-		// hpsocket version has a bug : Send big data by multiple thread to the same socket.It does not ensure data order . 
-		// Big that means : GetSocketBufferSize()
-		// TODO:
-		//	Will Changes library of network.
-		virtual bool Send(const RpcMeta& meta, const google::protobuf::Message& body);
-		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
-		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
+		virtual bool Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body);
+
+		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr);
 
 	protected:
 		// param[out] read_size : 
@@ -60,27 +58,24 @@ class RpcServer_Server : public RpcBaseNet, public frnet::NetListen{
 		virtual void OnError(const frnet::NetError& net_error);
 
 	private:
-		virtual bool IsChannel()const;
-
 		// * Is socket always positive? 
 		inline LinkID BuildLinkID(Socket socket)const { return (LinkID)socket; }
 		inline Socket GetSocket(LinkID link_id)const { return (Socket)link_id; }
 
 		bool ReturnError(Socket socket, const std::string& error_info);
-
-		virtual bool SendHeart(LinkID link_id);
 	private:
 		frnet::NetServer* server_;
 		std::string ip_;
 		Port port_;
 		NetInfo net_info_;
+		RpcHeart rpc_heart_;
 };
 // }}}1
 
 // class RpcServer_Gate {{{1
 
-class RpcServer_Gate;
 // class RpcServer_Gate_Client {{{2
+class RpcServer_Gate;
 class RpcServer_Gate_Client : public frnet::NetListen{
 	public:
 		RpcServer_Gate_Client(RpcServer_Gate* rpc_server_gate, GateID gate_id, const std::string& ip, Port);
@@ -95,10 +90,9 @@ class RpcServer_Gate_Client : public frnet::NetListen{
 		inline Port port()const{ return port_; }
 		inline GateID gate_id()const{ return gate_id_; }
 
-		bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
-		bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
+		bool Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body);
 
-		bool SendHeart(LinkID link_id);
+		bool RegisterService(const std::string& service_name, const std::string& service_addr);
 	protected:
 		// param[out] read_size : 
 		//	delete date size when function finish. Set 0 If you do not want delete any data.
@@ -117,6 +111,10 @@ class RpcServer_Gate_Client : public frnet::NetListen{
 	private:
 		bool ReturnError(const std::string& err_info); 
 
+		bool ReceiveRoutePacket(frrpc::network::NetInfo& net_info, RpcPacketPtr& packet);
+
+		bool PerformRouteCmd(frrpc::network::NetInfo& net_info);
+		bool ReceiveEventNotice(frrpc::route::RouteResponse route_response);
 	private:
 		frnet::NetClient* net_client_;
 		GateID gate_id_;
@@ -124,13 +122,14 @@ class RpcServer_Gate_Client : public frnet::NetListen{
 		Port port_;
 		RpcServer_Gate* rpc_server_gate_;
 		Byte receive_buffer_[NET_PACKET_MAX_SIZE];
+		RpcHeart rpc_heart_;
 };// }}}2
 
 // class RpcServer_Gate {{{2
 // TODO:
 //	* reconnection
 //	* 
-class RpcServer_Gate : public RpcBaseNet{
+class RpcServer_Gate : public RpcNetServer{
 	public:
 		friend class RpcServer_Gate_Client;
 	public:
@@ -144,16 +143,13 @@ class RpcServer_Gate : public RpcBaseNet{
 		
 		virtual bool Disconnect(LinkID link_id);
 
-		virtual bool Send(const RpcMeta& meta, const google::protobuf::Message& body);
-		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
-		virtual bool Send(const std::vector<LinkID>& link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
+		virtual bool Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body);
+
+		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr);
 
 		inline LinkID BuildLinkID(GateID gate_id, Socket socket)const{ return socket * pow(10, gate_length_) + gate_id; }
 		inline Socket GetSocket(LinkID link_id)const{ return link_id % (uint32_t)pow(10, gate_length_); }
 		inline GateID GetGateID(LinkID link_id)const{ return link_id / (uint32_t)pow(10, gate_length_); }
-	private:
-		virtual bool IsChannel()const;
-		virtual bool SendHeart(LinkID link_id);
 	private:
 		std::vector<RpcServer_Gate_Client*> gate_client_list_;
 		uint32_t gate_length_;
