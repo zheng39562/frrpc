@@ -16,51 +16,10 @@
 #include "frpublic/pub_memory.h"
 #include "frrpc_define.h"
 #include "controller.h"
+#include "common/rpc_serializable.h"
 
 namespace frrpc{
 namespace network{
-
-// class RpcPacket{{{1
-
-class RpcPacket{
-	public:
-		RpcPacket(LinkID _link_id, eNetEvent _net_event): link_id(_link_id), net_event(_net_event), rpc_meta(), binary(){ ; }
-		RpcPacket(const RpcPacket& ref){
-			link_id = ref.link_id;
-			net_event = ref.net_event;
-			rpc_meta = ref.rpc_meta;
-
-			if(binary == NULL){
-				binary = frpublic::BinaryMemoryPtr(new frpublic::BinaryMemory());
-			}
-			*binary = *ref.binary;
-		}
-		RpcPacket& operator=(const RpcPacket& ref){
-			link_id = ref.link_id;
-			net_event = ref.net_event;
-			rpc_meta = ref.rpc_meta;
-
-			if(binary == NULL){
-				binary = frpublic::BinaryMemoryPtr(new frpublic::BinaryMemory());
-			}
-			*binary = *ref.binary;
-		}
-		~RpcPacket()=default;
-	public:
-		inline void Clear(){
-			link_id = 0;
-			rpc_meta.Clear();
-			binary->clear();
-		}
-	public:
-		LinkID link_id;
-		eNetEvent net_event;
-		RpcMeta rpc_meta;
-		frpublic::BinaryMemoryPtr binary;
-};
-typedef std::shared_ptr<RpcPacket> RpcPacketPtr;
-// }}}1
-
 
 // class RpcBaseNet{{{1
 //
@@ -89,15 +48,6 @@ class RpcBaseNet{
 
 		void FetchMessageQueue(std::queue<RpcPacketPtr>& packet_queue, int32_t max_queue_size);
 	protected:
-		// parse binary, set net_info and packet.
-		// notice : packet has many variables. It only set net_event, rpc_meta and binary.
-		// 
-		// binary struct : net_size(2) + net_info + meta_size(2) + meta_size + binary
-		bool GetMessageFromBinary(const frpublic::BinaryMemory& binary, int32_t offset, NetInfo& net_info, RpcPacketPtr& packet);
-		// Build binary.
-		// body is a abstract name that means request or response.
-		frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info);
-		frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& meta, const google::protobuf::Message& body);
 
 		//
 		void PushMessageToQueue(const RpcPacketPtr& packet);
@@ -108,13 +58,13 @@ class RpcBaseNet{
 };
 // }}}1
 
-class RpcNetServer : public RpcBaseNet{
+class RpcNetServer : public RpcBaseNet{//{{{2
 	public:
 		RpcNetServer()=default;
 		virtual ~RpcNetServer()=default;
 	public:
 		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr)=0;
-};
+};//}}}2
 
 } // namespace network
 } // namespace frrpc

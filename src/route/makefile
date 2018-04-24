@@ -5,6 +5,7 @@ PROJECT_OBJECTS= \
 	./$(OUTPUT_TEMPORARY_PATH)/../pb/net.pb.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../pb/route.pb.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../common/rpc_heart.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../common/rpc_serializable.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./route.o \
 	./$(OUTPUT_TEMPORARY_PATH)/./main.o
 

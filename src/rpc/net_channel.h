@@ -57,21 +57,15 @@ class RpcChannel_Server : public RpcBaseNet, public frnet::NetListen{
 
 	private:
 		bool ReturnError(const std::string& error_info);
-
-		virtual bool IsChannel()const;
-		virtual bool SendHeart(LinkID link_id);
 	private:
 		frnet::NetClient* net_client_;
 		std::string ip_;
 		Port port_;
-		NetInfo net_info_;
 		RpcHeart rpc_heart_;
 };
 // }}}1
 
-// class RpcChannel_Gate {{{1
-
-class RpcChannel_Route : public RpcBaseNet, public frnet::NetListen{
+class RpcChannel_Route : public RpcBaseNet, public frnet::NetListen{ /// {{{1
 	public:
 		RpcChannel_Route(const std::string &ip, Port port);
 		RpcChannel_Route(const RpcChannel_Route &ref)=delete;

@@ -63,6 +63,7 @@ int main(int argc, char* argv[]){
 
 	string ip = SingleIniCfg::GetInstance()->GetString("network", "ip");
 	Port port = SingleIniCfg::GetInstance()->GetInt("network", "port");
+	SingleLogServer::GetInstance()->set_log_level("route", PARSE_LOG_STRING(SingleIniCfg::GetInstance()->GetString("log", "level")));
 
 	frrpc::route::RpcRoute rpc_route;
 	if(!rpc_route.Start(ip, port)){

@@ -28,10 +28,6 @@ Server::Server(ServerOption& option)// {{{2
 
 Server::~Server(){ // {{{2
 	Stop();
-
-	for(auto& name_2service_item : name_2service_){
-		DELETE_POINT_IF_NOT_NULL(name_2service_item.second);
-	}
 }// }}}2
 
 bool Server::AddService(::google::protobuf::Service* service){ // {{{2
@@ -58,7 +54,7 @@ bool Server::StartServer(const std::string& ip, Port port){// {{{2
 	return true;
 }// }}}2
 
-bool Server::StartGate(const vector<tuple<const std::string&, Port> >& gate_list){// {{{2
+bool Server::StartGate(const vector<tuple<std::string, Port> >& gate_list){// {{{2
 	DELETE_POINT_IF_NOT_NULL(rpc_net_server_);
 	rpc_net_server_ = new RpcServer_Gate(gate_list);
 	if(!rpc_net_server_->Start()){
@@ -92,7 +88,7 @@ bool Server::RunUntilQuit(){// {{{2
 	while(!IsAskedToQuit()){
 		FrSleep(1000);
 	}
-	RPC_DEBUG_P("Unit Quit.");
+	RPC_DEBUG_P("Server Quit : stop thread and clear resource.");
 	return Stop();
 }// }}}2
 
@@ -107,7 +103,7 @@ bool Server::SendRpcMessage(frrpc::Controller* cntl, const std::string& service_
 	rpc_meta.set_compress_type(compress_type_);
 
 	if(!rpc_net_server_->Send(cntl, rpc_meta, response)){
-		RPC_DEBUG_E("Fail to send message.");
+		RPC_DEBUG_E("Fail to send message. cntl info [" << cntl->info() << "]");
 		return false;
 	}
 
@@ -131,6 +127,8 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 					return ; 
 				}
 
+				RPC_DEBUG_I("Rpc work thread running.");
+
 				queue<RpcPacketPtr> packet_queue;
 				while(!IsAskedToQuit()){
 					rpc_net_server_->FetchMessageQueue(packet_queue, 2000);
@@ -146,11 +144,14 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 
 						cntl->set_link(package->link_id);
 						cntl->set_net_event(package->net_event);
-						cntl->set_service_name(package->rpc_meta.service_name());
 
 						if(cntl->net_event() == eNetEvent_Method){
 							google::protobuf::Service* cur_service(NULL);
 							if(ParseBinary(package, *rpc_message, &cur_service)){
+								RPC_DEBUG_P("Call method. packet info : " 
+										<< "link_id [" << package->link_id << "]" << "net_event [" << package->net_event << "]"
+										<< "name [" << package->rpc_meta.service_name() << "." << package->rpc_meta.method_index() << "]"
+										<< "request [" << rpc_message->request->GetDescriptor()->full_name() << "]" << "response [" << rpc_message->response->GetDescriptor()->full_name() << "]");
 								cur_service->CallMethod(rpc_message->method_descriptor, cntl, rpc_message->request, rpc_message->response, done);
 							}
 							else{
@@ -159,12 +160,15 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 							}
 						}
 						else{
+							RPC_DEBUG_P("Call net event function. cntl info : " << cntl->info());
 							if(net_event_cb_ != NULL){
 								net_event_cb_(cntl);
 							}
 						}
 					}
 				}
+
+				RPC_DEBUG_I("Rpc work thread stop.");
 
 				DELETE_POINT_IF_NOT_NULL(rpc_message);
 				DELETE_POINT_IF_NOT_NULL(done);
@@ -182,7 +186,6 @@ bool Server::InitThreads(ServerOption& option){  //{{{2
 }//}}}2
 
 void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){ // {{{2
-	RPC_DEBUG_P("Call ReleaseRpcResource");
 	if(rpc_net_server_ == NULL){ RPC_DEBUG_E("link is null."); return; }
 	if(rpc_message == NULL){ RPC_DEBUG_E("point of message is null."); return; }
 	if(cntl->link_id() == RPC_LINK_ID_NULL){ RPC_DEBUG_E("link is is zero. Can not send data."); return; }
@@ -192,7 +195,7 @@ void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){ // {
 		return;
 	}
 
-	RPC_DEBUG_P("Send response.");
+	RPC_DEBUG_P("Send response " << rpc_message->response->GetDescriptor()->full_name() << ". service name [" << rpc_message->rpc_meta.service_name() << "." << rpc_message->rpc_meta.method_index() << "]");
 	if(!rpc_net_server_->Send(cntl, rpc_message->rpc_meta, *(rpc_message->response))){
 		RPC_DEBUG_E("Fail to send message.");
 		return;
@@ -200,8 +203,6 @@ void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){ // {
 
 	cntl->Clear();
 	rpc_message->Clear();
-
-	RPC_DEBUG_P("End.");
 } // }}}2
 
 google::protobuf::Service* Server::GetServiceFromName(const std::string& service_name){ // {{{2

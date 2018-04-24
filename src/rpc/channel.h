@@ -38,8 +38,19 @@ class ChannelOption{
 // class RegisterCallBack {{{1
 class RegisterCallBack{
 	public:
-		RegisterCallBack(google::protobuf::Closure* _callback, google::protobuf::Message* _request): callback(_callback), response(_request) {;}
-		~RegisterCallBack()=default;
+		RegisterCallBack(google::protobuf::Closure* _callback, google::protobuf::Message* _response): callback(_callback), response(_response) { }
+		RegisterCallBack(const RegisterCallBack& ref){ this->callback = ref.callback; this->response = ref.response; }
+		RegisterCallBack& operator=(const RegisterCallBack& ref){ this->callback = ref.callback; this->response = ref.response; return *this; }
+		~RegisterCallBack(){ 
+//			DELETE_POINT_IF_NOT_NULL(callback); 
+//			DELETE_POINT_IF_NOT_NULL(response); 
+		}
+	public:
+		void release(){
+			DELETE_POINT_IF_NOT_NULL(callback); 
+			DELETE_POINT_IF_NOT_NULL(response); 
+		}
+
 	public:
 		google::protobuf::Closure* callback;
 		google::protobuf::Message* response;
@@ -50,6 +61,8 @@ class RegisterCallBack{
 class RequestCallBack{
 	public:
 		RequestCallBack(google::protobuf::Closure* _callback, google::protobuf::Message* _request): callback(_callback), response(_request) {;}
+		RequestCallBack(const RequestCallBack& ref){ this->callback = ref.callback; this->response = ref.response; }
+		RequestCallBack& operator=(const RequestCallBack& ref){ this->callback = ref.callback; this->response = ref.response; return *this; }
 		~RequestCallBack()=default;
 	public:
 		google::protobuf::Closure* callback;
@@ -83,7 +96,7 @@ class RequestCallBack{
 //
 //   MyService* service = new MyService::Stub(channel);
 //   RpcChannel* channel = new MyRpcChannel("remotehost.example.com:1234");
-//   ReigiterCallBack(channel, service->FindMethodByName(method_name), callback, arg1);
+//   RegisterRpcMethod(channel, service->FindMethodByName(method_name), callback, arg1);
 //
 //	 channel->RunCallback();
 //
@@ -139,161 +152,179 @@ class Channel : public google::protobuf::RpcChannel {
 		// clear old callback if it exist.
 		bool ClearCallback(const std::string& callback_key);
 
-		inline bool IsRequestMode(const frrpc::network::RpcPacketPtr& package){ return package->rpc_meta.rpc_request_meta().request_id() != RPC_REQUEST_ID_NULL; }
+		inline bool IsRequestMode(const frrpc::RpcPacketPtr& package){ return package->rpc_meta.rpc_request_meta().request_id() != RPC_REQUEST_ID_NULL; }
 	private:
 		bool init_success_;
 		frrpc::network::RpcBaseNet* rpc_net_;
 		std::map<RpcRequestId, RequestCallBack> request_callback_;
-		std::map<std::string, RegisterCallBack> default_callback_;
+		std::map<std::string, RegisterCallBack> register_callback_;
 		ChannelOption option_;
 		std::atomic<RpcRequestId> request_id_;
 		std::function<void(const Controller* cntl)> net_event_cb_;
 };
 // }}}1
 
-/*
-// template function list : ReigiterCallBack {{{2
+// template function list : RegisterRpcMethod {{{2
 // Zero
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void (*function)(google::protobuf::Message*)){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void (*function)(google::protobuf::Message*)){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response));
 }
 
 // Zero
 template <typename Class, typename Pointer>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*)){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*)){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response));
 }
 
 // Arg1
 template <typename Arg1>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1)), Arg1 arg1){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void (*function)(google::protobuf::Message*, Arg1), Arg1 arg1){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1));
 }
 
 // Arg1
 template <typename Class, typename Pointer, typename Arg1>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1), Arg1 arg1){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1), Arg1 arg1){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1));
 }
 
 // Arg2
 template <typename Arg1, typename Arg2>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1, Arg2)), Arg1 arg1, Arg2 arg2){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void (*function)(google::protobuf::Message*, Arg1, Arg2), Arg1 arg1, Arg2 arg2){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1, arg2));
 }
 
 // Arg2
 template <typename Class, typename Pointer, typename Arg1, typename Arg2>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2), Arg1 arg1, Arg2 arg2){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2), Arg1 arg1, Arg2 arg2){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2));
 }
 
 // Arg3
 template <typename Arg1, typename Arg2, typename Arg3>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3)), Arg1 arg1, Arg2 arg2, Arg3 arg3){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3)), Arg1 arg1, Arg2 arg2, Arg3 arg3){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1, arg2, arg3));
 }
 
 // Arg3
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3), Arg1 arg1, Arg2 arg2, Arg3 arg3){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3), Arg1 arg1, Arg2 arg2, Arg3 arg3){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3));
 }
 
 // Arg4
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1, arg2, arg3, arg4));
 }
 
 // Arg4
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3, arg4));
 }
 
 // Arg5
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1, arg2, arg3, arg4, arg5));
 }
 
 // Arg5
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3, arg4, arg5));
 }
 
 // Arg6 
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1, arg2, arg3, arg4, arg5, arg6));
 }
 
 // Arg6 
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3, arg4, arg5, arg6));
 }
 
 // Arg7 
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1, arg2, arg3, arg4, arg5, arg6, arg7));
 }
 
 // Arg7 
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3, arg4, arg5, arg6, arg7));
 }
 
 // Arg8 
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8));
 }
 
 // Arg8 
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8));
 }
 
 // Arg9
 template <typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void(*function(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9)), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(function, response, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9));
 }
 
 // Arg9
 template <typename Class, typename Pointer, typename Arg1, typename Arg2, typename Arg3, typename Arg4, typename Arg5, typename Arg6, typename Arg7, typename Arg8, typename Arg9>
-inline void ReigiterCallBack(Channel& channel, const google::protobuf::MethodDescriptor* method_descriptor, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9){
-	google::protobuf::Message* response = CreateProtoMessage(method_descriptor->output_type());
+inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::Message*, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9), Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8, Arg9 arg9){
+	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9));
 }
 
 // }}}2
-*/
 
 // }}}1
 

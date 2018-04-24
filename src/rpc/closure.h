@@ -897,7 +897,6 @@ inline ::google::protobuf::Closure* NewPermanentCallback( const Pointer& object,
 
 } // namespace frrpc{
 
-
 #endif 
 
 

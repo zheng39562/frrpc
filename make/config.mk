@@ -1,5 +1,5 @@
 COMMON_LIBRARY=-luuid -lpthread -lrt -ldl -lboost_filesystem -lboost_regex -lfrpublic -lprotobuf -lfrnet_epoll
-COMMON_SQL_LIBRARY=-lfr_sql -lmysqlcppconn 
+COMMON_SQL_LIBRARY=-lfrsql -lmysqlcppconn 
 COMMON_LIBRARY_PATH=-L/usr/ -L../../build/lib/
 COMMON_INCLUDE=-I../../src/
 COMMON_MACRO=-D__LINUX -D__FRNET_EPOLL

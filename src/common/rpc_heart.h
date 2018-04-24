@@ -21,7 +21,7 @@ namespace frrpc{// {{{1
 
 frpublic::BinaryMemoryPtr BuildHeartPacket();
 
-// class RpcHeart {{{1
+// class RpcHeart {{{2
 // TODO:
 //	Client disconnect: client only send heart now.It does not check heart response.
 //		* bool SendResponse(Socket socket);
@@ -54,7 +54,8 @@ class RpcHeart{
 		std::set<Socket> wait_heart_array_;
 		std::set<Socket> socket_array_;
 };
-// }}}1
+//}}}2
+//
 
 } //}}}1
 

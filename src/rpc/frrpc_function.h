@@ -28,7 +28,7 @@ inline uint32_t GetNumberLength(Integer integer){
 	do{
 		++length;
 		integer /= 10;
-	}while((integer - 0) < 0.0000001);
+	}while((integer - 0) > 0.0000001);
 
 	return length;
 }

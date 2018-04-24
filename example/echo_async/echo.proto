@@ -4,6 +4,9 @@ option cc_generic_services = true;
 
 package example;
 
+message empty{
+}
+
 message request{
 	string msg = 1;
 };
@@ -14,5 +17,7 @@ message response{
 
 service EchoService{
 	rpc Echo(request) returns (response);
+	rpc RegisterEcho(empty) returns (response);
+	rpc RegisterClassEcho(empty) returns (response);
 }
 

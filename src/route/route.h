@@ -23,6 +23,8 @@
 namespace frrpc{ // {{{1
 namespace route{ 
 
+	std::string GetCommandName(eRouteCmd cmd);
+
 // class RouteServiceInfos {{{2
 class RouteServiceInfos{
 	public:

@@ -18,7 +18,7 @@ namespace frrpc{
 Channel::Channel(const ChannelOption& option)// {{{2
 	:rpc_net_(NULL),
 	 request_callback_(),
-	 default_callback_(),
+	 register_callback_(),
 	 option_(option),
 	 init_success_(false),
 	 net_event_cb_()
@@ -28,6 +28,10 @@ Channel::Channel(const ChannelOption& option)// {{{2
 
 Channel::~Channel(){// {{{2
 	DELETE_POINT_IF_NOT_NULL(rpc_net_);
+
+	for(auto& register_callback_item : register_callback_){
+		register_callback_item.second.release();
+	}
 }// }}}2
 
 bool Channel::StartServer(const std::string& ip, Port port){// {{{2
@@ -39,7 +43,7 @@ bool Channel::StartServer(const std::string& ip, Port port){// {{{2
 
 bool Channel::StartGate(const std::string& ip, Port port){// {{{2
 	DELETE_POINT_IF_NOT_NULL(rpc_net_);
-	rpc_net_ = new RpcChannel_Server(ip, port);
+	rpc_net_ = new RpcChannel_Route(ip, port);
 	init_success_ = rpc_net_ != NULL && rpc_net_->Start();
 	return init_success_;
 }// }}}2
@@ -75,8 +79,6 @@ void Channel::CallMethod(const MethodDescriptor* method, RpcController* controll
 	rpc_meta.mutable_rpc_request_meta()->set_request_id(request_id);
 	rpc_meta.set_compress_type(option_.compress_type);
 
-	cntl->set_service_name(method->service()->name());
-
 	if(!rpc_net_->Send(cntl, rpc_meta, *request)){
 		RPC_DEBUG_E("Fail to send request."); return ;
 	}
@@ -86,14 +88,16 @@ void Channel::RegisterCallback(const MethodDescriptor* method, google::protobuf:
 	if(!init_success_){ RPC_DEBUG_E("Initialization is failed. Please check and new again."); return; }
 	if(method == NULL || response == NULL || permanet_callback == NULL){ RPC_DEBUG_E("Not allow parameter is null."); return; }
 
-	string callback_key = method->service()->name() + to_string(method->index());
-	if(default_callback_.find(callback_key) != default_callback_.end()){
+	string callback_key = method->service()->name() + "." + to_string(method->index());
+	if(register_callback_.find(callback_key) != register_callback_.end()){
 		if(!ClearCallback(callback_key)){
 			RPC_DEBUG_E("service [" << method->service()->name() << "] method [" << method->name() << "] is exist.And fail to clear.");
 			return ;
 		}
 	}
-	default_callback_.insert(make_pair(callback_key, RegisterCallBack(permanet_callback, response)));
+
+	RPC_DEBUG_I("Register function. callback_key [" << callback_key << "] listen method [" << method->full_name() << "][" << method->index() << "] response name [" << response->GetDescriptor()->full_name() << "] addr [" << response << "]");
+	register_callback_.insert(make_pair(callback_key, RegisterCallBack(permanet_callback, response)));
 }// }}}2
 
 void Channel::RunCallback(uint32_t run_cb_times){// {{{2
@@ -105,11 +109,10 @@ void Channel::RunCallback(uint32_t run_cb_times){// {{{2
 		RpcPacketPtr package = packet_queue.front();
 		packet_queue.pop();
 
-		RPC_DEBUG_P("Receive packet.");
+		RPC_DEBUG_P("Receive packet. info : " << package->info());
 
 		if(package->net_event == eNetEvent_Method){
 			if(IsRequestMode(package)){
-				RPC_DEBUG_P("request.");
 
 				auto request_callback_iter = request_callback_.find(package->rpc_meta.rpc_request_meta().request_id());
 				if(request_callback_iter == request_callback_.end()){
@@ -122,15 +125,16 @@ void Channel::RunCallback(uint32_t run_cb_times){// {{{2
 				request_callback_.erase(request_callback_iter);
 			}
 			else{
-				auto default_callback_iter = default_callback_.find(package->rpc_meta.service_name() + to_string(package->rpc_meta.method_index()));
-				if(default_callback_iter != default_callback_.end()){
-					RPC_DEBUG_E("Can not find key [" << package->rpc_meta.service_name() << to_string(package->rpc_meta.method_index()) << "]");
+				auto default_callback_iter = register_callback_.find(ConvertMethodKey(package->rpc_meta.service_name(), package->rpc_meta.method_index()));
+				if(default_callback_iter == register_callback_.end()){
+					RPC_DEBUG_E("Can not find key [" << package->rpc_meta.service_name() << "." << to_string(package->rpc_meta.method_index()) << "]");
 					return ;
 				}
-				
+
 				default_callback_iter->second.response->ParseFromArray(package->binary->buffer(), package->binary->size());
 				default_callback_iter->second.callback->Run();
-				default_callback_.erase(default_callback_iter);
+
+				default_callback_iter->second.response->Clear();
 			}
 		}
 		else{
@@ -144,6 +148,9 @@ void Channel::RunCallback(uint32_t run_cb_times){// {{{2
 				net_event_cb_(cntl);
 				DELETE_POINT_IF_NOT_NULL(cntl);
 			}
+			else{
+				RPC_DEBUG_P("callbacl of net event is not setted.");
+			}
 		}
 	}
 }// }}}2
@@ -151,15 +158,14 @@ void Channel::RunCallback(uint32_t run_cb_times){// {{{2
 void Channel::ClearAllSetting(){// {{{2
 	Stop();
 	request_callback_.clear();
-	default_callback_.clear();
+	register_callback_.clear();
 }// }}}2
 
 bool Channel::ClearCallback(const std::string& callback_key){// {{{2
-	auto default_callback_iter = default_callback_.find(callback_key);
-	if(default_callback_iter != default_callback_.end()){
-		DELETE_POINT_IF_NOT_NULL(default_callback_iter->second.response);
-		DELETE_POINT_IF_NOT_NULL(default_callback_iter->second.callback);
-		default_callback_.erase(default_callback_iter);
+	auto default_callback_iter = register_callback_.find(callback_key);
+	if(default_callback_iter != register_callback_.end()){
+		default_callback_iter->second.release();
+		register_callback_.erase(default_callback_iter);
 		return true;
 	}
 	return false;

@@ -133,7 +133,7 @@ class RpcServer_Gate : public RpcNetServer{
 	public:
 		friend class RpcServer_Gate_Client;
 	public:
-		RpcServer_Gate(const std::vector<std::tuple<const std::string&, Port> >& gate_list);
+		RpcServer_Gate(const std::vector<std::tuple<std::string, Port> >& gate_list);
 		RpcServer_Gate(const RpcServer_Gate& ref)=delete;
 		RpcServer_Gate& operator=(const RpcServer_Gate& ref)=delete;
 		virtual ~RpcServer_Gate();

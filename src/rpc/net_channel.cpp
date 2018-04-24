@@ -9,6 +9,7 @@
 #include "net_channel.h"
 
 #include "pb/route.pb.h"
+#include "common/rpc_serializable.h"
 
 using namespace std;
 using namespace frpublic;
@@ -23,10 +24,8 @@ RpcChannel_Server::RpcChannel_Server(const std::string &ip, Port port)// {{{2
 	:net_client_(CreateNetClient(this)),
 	 ip_(ip),
 	 port_(port),
-	 net_info_(),
 	 rpc_heart_()
 {
-	net_info_.set_net_type(eNetType_Server);
 }// }}}2
 
 RpcChannel_Server::~RpcChannel_Server(){// {{{2
@@ -52,9 +51,11 @@ bool RpcChannel_Server::Disconnect(LinkID link_id){// {{{2
 }// }}}2
 
 bool RpcChannel_Server::Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body){// {{{2
-	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info_, meta, body);
+	NetInfo net_info;
+	net_info.set_net_type(eNetType_Server);
+	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info, meta, body);
 	if(binary != NULL){
-		if(!net_client_->Send(binary)){
+		if(net_client_->Send(binary) != eNetSendResult_Ok){
 			RPC_DEBUG_E("Fail to send binary.");
 			return false;
 		}
@@ -86,16 +87,16 @@ bool RpcChannel_Server::OnReceive(Socket socket, const frpublic::BinaryMemory& b
 				return ReturnError("Error : GetMessageFromBinary.");
 			}
 
-			if(net_info.net_type() == net_info_.net_type()){
-				PushMessageToQueue(packet);
-			}
-			else{
-				return ReturnError("net type is wrong.");
+			switch(net_info.net_type()){
+				case eNetType_Server: 
+					PushMessageToQueue(packet); 
+					break;
+				case eNetType_Heart: RPC_DEBUG_D("Receive heart response."); break;
+				default: RPC_DEBUG_E("net type[" << net_info.net_type() << "] cat not to handle."); return false;
 			}
 		}
 		else{
-			RPC_DEBUG_E("Fail to new packet.");
-			return false;
+			RPC_DEBUG_E("Fail to new packet."); return false;
 		}
 
 		read_size += size + sizeof(size);
@@ -121,24 +122,6 @@ void RpcChannel_Server::OnError(const NetError& net_error){// {{{2
 bool RpcChannel_Server::ReturnError(const std::string& error_info){// {{{2
 	RPC_DEBUG_E(error_info);
 	return false;
-}// }}}2
-
-bool RpcChannel_Server::IsChannel()const{// {{{2
-	return true;
-}// }}}2
-
-bool RpcChannel_Server::SendHeart(LinkID link_id){// {{{2
-	NetInfo net_info;
-	net_info.set_net_type(eNetType_Heart);
-
-	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info_);
-	if(binary != NULL){
-		if(!net_client_->Send(binary)){
-			RPC_DEBUG_E("Fail to send binary.");
-			return false;
-		}
-	}
-	return true;
 }// }}}2
 
 } // namespace network
@@ -187,13 +170,13 @@ bool RpcChannel_Route::Send(Controller* cntl, const RpcMeta& meta, const google:
 
 	frrpc::route::RouteNetInfo route_net_info;
 	route_net_info.set_is_channel_packet(true);
-	route_net_info.set_service_name(cntl->service_name());
+	route_net_info.set_service_name(meta.service_name());
 	route_net_info.set_service_addr(cntl->service_addr());
-	if(route_net_info.SerializeToString(net_info.mutable_net_binary())){
+	if(!route_net_info.SerializeToString(net_info.mutable_net_binary())){
 		RPC_DEBUG_E("Fail to serialize route net info."); return false;
 	}
 
-	if(!net_client_->Send(BuildBinaryFromMessage(net_info, meta, body))){
+	if(net_client_->Send(BuildBinaryFromMessage(net_info, meta, body)) != eNetSendResult_Ok){
 		RPC_DEBUG_E("Fail to send binary."); return false;
 	}
 
@@ -214,13 +197,14 @@ bool RpcChannel_Route::OnReceive(Socket socket, const frpublic::BinaryMemory& bi
 		RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
 		if(packet != NULL){
 			if(!GetMessageFromBinary(binary, offset, net_info, packet)){
-				DEBUG_E("Error : GetMessageFromBinary."); return false;
+				RPC_DEBUG_E("Error : GetMessageFromBinary."); return false;
 			}
 
 			switch(net_info.net_type()){
 				case eNetType_Route: PushMessageToQueue(packet); break;
-				case eNetType_Heart: RPC_DEBUG_E("undefined."); break;
+				case eNetType_Heart: break;
 				case eNetType_RouteCmd: break;
+				default : RPC_DEBUG_E("net type[" << net_info.net_type() << "] cat not to handle."); return false;
 			}
 		}
 		else{
@@ -256,7 +240,7 @@ bool RpcChannel_Route::SendHeart(LinkID link_id){// {{{2
 
 	BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info);
 	if(binary != NULL){
-		if(!net_client_->Send(binary)){
+		if(net_client_->Send(binary) != eNetSendResult_Ok){
 			RPC_DEBUG_E("Fail to send binary.");
 			return false;
 		}

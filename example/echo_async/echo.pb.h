@@ -37,22 +37,28 @@ namespace protobuf_echo_2eproto {
 struct TableStruct {
   static const ::google::protobuf::internal::ParseTableField entries[];
   static const ::google::protobuf::internal::AuxillaryParseTableField aux[];
-  static const ::google::protobuf::internal::ParseTable schema[2];
+  static const ::google::protobuf::internal::ParseTable schema[3];
   static const ::google::protobuf::internal::FieldMetadata field_metadata[];
   static const ::google::protobuf::internal::SerializationTable serialization_table[];
   static const ::google::protobuf::uint32 offsets[];
 };
 void AddDescriptors();
+void InitDefaultsemptyImpl();
+void InitDefaultsempty();
 void InitDefaultsrequestImpl();
 void InitDefaultsrequest();
 void InitDefaultsresponseImpl();
 void InitDefaultsresponse();
 inline void InitDefaults() {
+  InitDefaultsempty();
   InitDefaultsrequest();
   InitDefaultsresponse();
 }
 }  // namespace protobuf_echo_2eproto
 namespace example {
+class empty;
+class emptyDefaultTypeInternal;
+extern emptyDefaultTypeInternal _empty_default_instance_;
 class request;
 class requestDefaultTypeInternal;
 extern requestDefaultTypeInternal _request_default_instance_;
@@ -63,6 +69,98 @@ extern responseDefaultTypeInternal _response_default_instance_;
 namespace example {
 
 // ===================================================================
+
+class empty : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:example.empty) */ {
+ public:
+  empty();
+  virtual ~empty();
+
+  empty(const empty& from);
+
+  inline empty& operator=(const empty& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  #if LANG_CXX11
+  empty(empty&& from) noexcept
+    : empty() {
+    *this = ::std::move(from);
+  }
+
+  inline empty& operator=(empty&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+  #endif
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const empty& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const empty* internal_default_instance() {
+    return reinterpret_cast<const empty*>(
+               &_empty_default_instance_);
+  }
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
+    0;
+
+  void Swap(empty* other);
+  friend void swap(empty& a, empty& b) {
+    a.Swap(&b);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline empty* New() const PROTOBUF_FINAL { return New(NULL); }
+
+  empty* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void CopyFrom(const empty& from);
+  void MergeFrom(const empty& from);
+  void Clear() PROTOBUF_FINAL;
+  bool IsInitialized() const PROTOBUF_FINAL;
+
+  size_t ByteSizeLong() const PROTOBUF_FINAL;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const PROTOBUF_FINAL;
+  void InternalSwap(empty* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:example.empty)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  mutable int _cached_size_;
+  friend struct ::protobuf_echo_2eproto::TableStruct;
+  friend void ::protobuf_echo_2eproto::InitDefaultsemptyImpl();
+};
+// -------------------------------------------------------------------
 
 class request : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:example.request) */ {
  public:
@@ -99,7 +197,7 @@ class request : public ::google::protobuf::Message /* @@protoc_insertion_point(c
                &_request_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
-    0;
+    1;
 
   void Swap(request* other);
   friend void swap(request& a, request& b) {
@@ -206,7 +304,7 @@ class response : public ::google::protobuf::Message /* @@protoc_insertion_point(
                &_response_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
-    1;
+    2;
 
   void Swap(response* other);
   friend void swap(response& a, response& b) {
@@ -295,6 +393,14 @@ class EchoService : public ::google::protobuf::Service {
                        const ::example::request* request,
                        ::example::response* response,
                        ::google::protobuf::Closure* done);
+  virtual void RegisterEcho(::google::protobuf::RpcController* controller,
+                       const ::example::empty* request,
+                       ::example::response* response,
+                       ::google::protobuf::Closure* done);
+  virtual void RegisterClassEcho(::google::protobuf::RpcController* controller,
+                       const ::example::empty* request,
+                       ::example::response* response,
+                       ::google::protobuf::Closure* done);
 
   // implements Service ----------------------------------------------
 
@@ -328,6 +434,14 @@ class EchoService_Stub : public EchoService {
                        const ::example::request* request,
                        ::example::response* response,
                        ::google::protobuf::Closure* done);
+  void RegisterEcho(::google::protobuf::RpcController* controller,
+                       const ::example::empty* request,
+                       ::example::response* response,
+                       ::google::protobuf::Closure* done);
+  void RegisterClassEcho(::google::protobuf::RpcController* controller,
+                       const ::example::empty* request,
+                       ::example::response* response,
+                       ::google::protobuf::Closure* done);
  private:
   ::google::protobuf::RpcChannel* channel_;
   bool owns_channel_;
@@ -344,6 +458,10 @@ class EchoService_Stub : public EchoService {
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// empty
+
+// -------------------------------------------------------------------
+
 // request
 
 // string msg = 1;
@@ -459,6 +577,8 @@ inline void response::set_allocated_msg(::std::string* msg) {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 

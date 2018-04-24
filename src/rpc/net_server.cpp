@@ -10,6 +10,7 @@
 
 #include "frpublic/pub_memory.h"
 #include "frpublic/pub_tool.h"
+#include "common/rpc_serializable.h"
 #include "controller.h"
 #include "frrpc_function.h"
 
@@ -39,11 +40,7 @@ RpcServer_Server::RpcServer_Server(const std::string &ip, Port port)// {{{2
 }// }}}2
 
 RpcServer_Server::~RpcServer_Server(){ // {{{2
-	if(server_ != NULL){
-		server_->Stop();
-		delete server_;
-		server_ = NULL;
-	}
+	Stop();
 }// }}}2
 
 bool RpcServer_Server::Start(){// {{{2
@@ -51,16 +48,17 @@ bool RpcServer_Server::Start(){// {{{2
 		RPC_DEBUG_E("Fail to start server");
 		return false;
 	}
-	RPC_DEBUG_I("Listen [" << ip_ << ":" << port_ << "]");
-	
 	rpc_heart_.RunServer(server_);
 	return true;
 }// }}}2
 
 bool RpcServer_Server::Stop(){// {{{2
-	if(!server_->Stop()){
-		RPC_DEBUG_E("Fail to stop server.");
-		return false;
+	if(server_ != NULL){
+		if(!server_->Stop()){
+			RPC_DEBUG_E("Fail to stop server.");
+			return false;
+		}
+		DELETE_POINT_IF_NOT_NULL(server_);
 	}
 	rpc_heart_.StopHeartCheck();
 
@@ -79,9 +77,9 @@ bool RpcServer_Server::Send(Controller* cntl, const RpcMeta& meta, const google:
 	if(binary != NULL){
 		ret = true;
 		for(int index = 0; index < cntl->link_size(); ++index){
-			LinkID link_id = cntl->link_id(index);
-			if(!server_->Send(GetSocket(link_id), binary)){
-				RPC_DEBUG_E("Fail to send body. Detail : link_id [" << link_id << "] body size [" << binary->size() << "]");
+			RPC_DEBUG_P("link id[" << cntl->link_id(index) << "] service[" << meta.service_name() << "." << meta.method_index() << "] binary [" << binary->to_hex() << "]");
+			if(server_->Send(GetSocket(cntl->link_id(index)), binary) != eNetSendResult_Ok){
+				RPC_DEBUG_E("Fail to send body. Detail : link id [" << cntl->link_id(index) << "] binary [" << binary->to_hex() << "]");
 				ret = false;
 				continue;
 			}
@@ -181,6 +179,7 @@ RpcServer_Gate_Client::~RpcServer_Gate_Client(){// {{{2
 }// }}}2
 
 bool RpcServer_Gate_Client::Start(){// {{{2
+	RPC_DEBUG_P("Connect Route [" << ip_ << ":" << port_ << "]");
 	if(!net_client_->Start(ip_.c_str(), port_)){
 		RPC_DEBUG_E("Fail to start[" << ip_ << ":" << port_ << "]");
 		return false;
@@ -197,7 +196,7 @@ bool RpcServer_Gate_Client::Stop(){// {{{2
 bool RpcServer_Gate_Client::Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body){// {{{2
 	RouteNetInfo route_net_info;
 	route_net_info.set_is_channel_packet(false);
-	route_net_info.set_service_name(cntl->service_name());
+	route_net_info.set_service_name(meta.service_name());
 	route_net_info.set_service_addr(cntl->service_addr());
 
 	route_net_info.clear_target_sockets();
@@ -208,25 +207,21 @@ bool RpcServer_Gate_Client::Send(Controller* cntl, const RpcMeta& meta, const go
 		}
 	}
 
-	bool ret(false);
 	if(route_net_info.target_sockets_size() > 0){
 		NetInfo net_info;
 		net_info.set_net_type(eNetType_Route);
 		if(route_net_info.SerializeToString(net_info.mutable_net_binary())){
-			BinaryMemoryPtr binary = rpc_server_gate_->BuildBinaryFromMessage(net_info, meta, body);
+			BinaryMemoryPtr binary = BuildBinaryFromMessage(net_info, meta, body);
 			if(binary != NULL){
-				ret = net_client_->Send(binary);
-				if(!ret){
-					RPC_DEBUG_E("Fail to send binary.");
+				if(net_client_->Send(binary) != eNetSendResult_Ok){
+					RPC_DEBUG_E("Fail to send binary."); return false;
 				}
 			}
 		}
 	}
-	else{
-		RPC_DEBUG_E("None socket is belong to this gate.");
-	}
+	else{ RPC_DEBUG_E("None socket is belong to this gate."); return false; }
 
-	return ret;
+	return true;
 }//}}}2
 
 bool RpcServer_Gate_Client::RegisterService(const std::string& service_name, const std::string& service_addr){//{{{2
@@ -248,16 +243,8 @@ bool RpcServer_Gate_Client::RegisterService(const std::string& service_name, con
 		return false;
 	}
 
-	PacketSize size(net_info.ByteSize());
-
-	BinaryMemoryPtr register_packet(new BinaryMemory());
-	register_packet->add((void*)&size, sizeof(size));
-	if(!net_info.SerializeToArray(register_packet->CopyMemoryFromOut(size), size)){
-		RPC_DEBUG_E("Fail to serialize net info.");
-		return false;
-	}
-
-	return net_client_->Send(register_packet);
+	BinaryMemoryPtr register_packet = BuildBinaryFromMessage(net_info);
+	return register_packet != NULL && net_client_->Send(register_packet) != eNetSendResult_Ok;
 }//}}}2
 
 bool RpcServer_Gate_Client::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){// {{{2
@@ -274,7 +261,7 @@ bool RpcServer_Gate_Client::OnReceive(Socket socket, const frpublic::BinaryMemor
 		NetInfo net_info;
 		RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
 		if(packet != NULL){
-			if(!rpc_server_gate_->GetMessageFromBinary(binary, offset, net_info, packet)){
+			if(!GetMessageFromBinary(binary, offset, net_info, packet)){
 				return ReturnError("Error : GetMessageFromBinary.");
 			}
 
@@ -362,7 +349,7 @@ bool RpcServer_Gate_Client::ReceiveEventNotice(frrpc::route::RouteResponse route
 	return true;
 }//}}}2
 
-RpcServer_Gate::RpcServer_Gate(const std::vector<std::tuple<const std::string&, Port> >& gate_list)// {{{2
+RpcServer_Gate::RpcServer_Gate(const std::vector<std::tuple<std::string, Port> >& gate_list)// {{{2
 	:gate_client_list_(),
 	 gate_length_(GetNumberLength(gate_list.size()))
 {
@@ -382,9 +369,11 @@ RpcServer_Gate::~RpcServer_Gate(){// {{{2
 }// }}}2
 
 bool RpcServer_Gate::Start(){// {{{2
+	bool ret(true);
 	for(auto& gate_client : gate_client_list_){
-		gate_client->Start();
+		ret &= gate_client->Start();
 	}
+	return ret;
 }// }}}2
 
 bool RpcServer_Gate::Stop(){// {{{2
@@ -414,7 +403,7 @@ bool RpcServer_Gate::Send(Controller* cntl, const RpcMeta& meta, const google::p
 	bool ret(true);
 	for(auto& gate_id : gate_ids){
 		if(gate_id < gate_client_list_.size()){
-			ret &= gate_client_list_[gate_id]->Send(cntl, meta, body);
+			ret &= (gate_client_list_[gate_id]->Send(cntl, meta, body) == eNetSendResult_Ok);
 		}
 	}
 	return ret;

@@ -105,17 +105,17 @@ class Controller : public google::protobuf::RpcController {
 		inline size_t link_size()const{ return link_ids_ != NULL ? link_ids_->size() : 0; }
 
 		// type of message.
-		inline void set_net_event(frrpc::network::eNetEvent net_event){ controller::inside::AssignmentPoint(net_event_, net_event); }
-		inline frrpc::network::eNetEvent net_event()const{ return net_event_ != NULL ? *net_event_ : frrpc::network::eNetEvent_Invalid; }
-
-		// service name 
-		inline const std::string& service_name(){ if(service_name_ == NULL){ set_service_name(""); } return *service_name_; }
-		inline void set_service_name(const std::string& service_name){ controller::inside::AssignmentPoint(service_name_, service_name); }
+		inline frrpc::network::eNetEvent net_event()const{ return net_event_; }
+		inline void set_net_event(frrpc::network::eNetEvent net_event){ net_event_ = net_event; }
 
 		// service addr
-		inline std::string& service_addr(){ if(service_addr_ == NULL){ set_service_addr(""); } return *service_addr_; }
-		inline void set_service_addr(const std::string& service_addr){ controller::inside::AssignmentPoint(service_addr_, service_addr); }
+		inline std::string service_addr()const{ if(service_addr_ == NULL){ return ""; } return *service_addr_; }
+		inline void set_service_addr(const std::string& service_addr){ 
+			if(service_addr_ == nullptr){ service_addr_ = new std::string(service_addr); }
+			else{ *service_addr_ = service_addr; }
+		}
 
+		std::string info()const;
 	private:
 		inline void new_link(){ if(link_ids_ == NULL){ link_ids_ = new std::vector<LinkID>(); } }
 
@@ -123,10 +123,9 @@ class Controller : public google::protobuf::RpcController {
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Controller);
 
 	private:
-		frrpc::network::eNetEvent* net_event_;
+		frrpc::network::eNetEvent net_event_;
 
 		std::vector<LinkID>* link_ids_;
-		std::string* service_name_;
 		std::string* service_addr_;
 };
 

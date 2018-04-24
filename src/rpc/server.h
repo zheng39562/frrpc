@@ -76,7 +76,7 @@ class Server{
 		bool AddService(::google::protobuf::Service* service);
 
 		bool StartServer(const std::string& ip, Port port);
-		bool StartGate(const std::vector<std::tuple<const std::string&, Port> >& gate_list);
+		bool StartGate(const std::vector<std::tuple<std::string, Port> >& gate_list);
 		bool StartMQ(const std::vector<std::tuple<const std::string&, Port> >& mq_list);
 
 		bool Stop();
@@ -96,7 +96,7 @@ class Server{
 		void ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message);
 		
 		google::protobuf::Service* GetServiceFromName(const std::string& service_name);
-		bool ParseBinary(const frrpc::network::RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service** service);
+		bool ParseBinary(const frrpc::RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service** service);
 	private:
 		frrpc::network::RpcNetServer* rpc_net_server_;
 		ServerOption option_;
