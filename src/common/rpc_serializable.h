@@ -65,14 +65,13 @@ class RpcPacket{
 typedef std::shared_ptr<RpcPacket> RpcPacketPtr;
 // }}}2
 
-
+// packet struct : net_size(2) + net_info + meta_size(2) + meta_size + binary
+//
 frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const network::NetInfo& net_info);
 frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const network::NetInfo& net_info, const RpcMeta& meta, const google::protobuf::Message& body);
 
 // parse binary, set net_info and packet.
 // notice : packet has many variables. It only set net_event, rpc_meta and binary.
-// 
-// binary struct : net_size(2) + net_info + meta_size(2) + meta_size + binary
 bool GetMessageFromBinary(const frpublic::BinaryMemory& binary, int32_t offset, network::NetInfo& net_info, RpcPacketPtr& packet);
 
 }//}}}1

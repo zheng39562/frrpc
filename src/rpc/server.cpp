@@ -235,6 +235,7 @@ bool Server::ParseBinary(const RpcPacketPtr& packet, RpcMessage& rpc_message, go
 	if(rpc_message.request != NULL){
 		if(!rpc_message.request->ParseFromArray(packet->binary->buffer(), packet->binary->size())){
 			rpc_message.Clear();
+			RPC_DEBUG_E("Fail to parse request message. body binary [" << packet->binary->to_hex() << "]");
 		}
 	}
 

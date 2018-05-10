@@ -1,5 +1,4 @@
 ### TODO:
-	* 完善所有的测试用例, 简易的测试用例都当做demo使用.(每个用力都需要server 版本和 gate版本)
 	* 需要测试
 		* rpc请求服务
 		* 连接，断开，以及相关的通知功能.
@@ -12,26 +11,24 @@
 			* 断线等network响应对应都未完善.
 	* client消息发到route时，如果server还没有注册，现在是只有route端有一个警告，后续需要在告知client一个通知
 		* 具体设计还没出来.
-	* 同步channel机制未实现.
 	* 压测和边界测试.
 	* 文档和流程 : use graph-easy
 	* method_index change to method name.
+	* 同步channel机制未实现.
 
 ### 其他项目对此项目的影响 or 需要完成的备忘.
-	* makefile pattern 匹配问题.
+	* makefile 
+		* pattern 匹配问题: 对pb目录的动态匹配.(输出目录统一为out，而不是单独成目录,但现在的匹配方式做不到)
+		* 完成后，增加-O2的优化编译选项.(性能测试时添加，需要先经过功能测和压测)
 	* frnet 的stop问题.
 		* 同线程递归调用到join。具体见frnet，会直接影响rpc OnReceive 中不能进行Stop操作.
 	* frvim 
 		* cs link 还存在bug。有时候会连接很多个.
 		* 自动读取功能好像有时候不会生效.
-	* -O2的优化配置。当测试成功后使用.
-		* 用以压测.
 
 ### 现有问题和进度 
-	* client - route - server 之前的联通已完成。
+	* client - route - server 之间的联通已完成。
 		-= 还没测试之前发送数据包.
-
-### vim
-	* vimgdb 看能不能用(不能用只能用gdb脚本了)
-
+	* 当前停留状态： 
+		* 基本消息调通了.
 

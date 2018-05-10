@@ -151,6 +151,7 @@ bool RpcRoute::OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, si
 			DEBUG_E("Fail to parse binary. net info socket [" << sockfd << "] cur_offset " << cur_offset << " binary size [" << binary.size() << "] binary [" << binary.to_hex() << "]"); return false;
 		}
 
+		DEBUG_P("receive packet [" << binary.to_hex(cur_offset, sizeof(PacketSize) + size) << "]");
 		bool ret(false);
 		switch(net_info.net_type()){
 			case eNetType_Route: ret = RouteProcess(sockfd, binary, cur_offset, net_info); break;
@@ -234,28 +235,38 @@ bool RpcRoute::GetNetInfo(const frpublic::BinaryMemory& binary, int32_t offset, 
 bool RpcRoute::RouteProcess(Socket socket, const frpublic::BinaryMemory& binary, int32_t offset, frrpc::network::NetInfo& net_info){// {{{2
 	frrpc::route::RouteNetInfo route_net_info;
 	if(route_net_info.ParseFromString(net_info.net_binary())){
-		route_net_info.set_source_socket(socket);
+		net_info.mutable_net_binary()->clear();
 
 		if(route_net_info.is_channel_packet()){
-			lock_guard<mutex> local_lock(mutex_service_2info_);
-
-			std::map<ServiceName, RouteServiceInfosPtr> service_2info_;
-			auto service_2info_iter = service_2info_.find(route_net_info.service_name());
-			if(service_2info_iter == service_2info_.end()){
-				DEBUG_W("Can not find service name [" << route_net_info.service_name() << "]");
-				return true;
+			route_net_info.set_source_socket(socket);
+			if(!route_net_info.SerializeToString(net_info.mutable_net_binary())){
+				DEBUG_PB_SERIALIZE_FAILURE("new net info"); return false;
 			}
-			route_net_info.add_target_sockets(service_2info_iter->second->GetServiceSocket(route_net_info.service_addr()));
-		}
 
-		if(!route_net_info.SerializeToString(net_info.mutable_net_binary())){
-			DEBUG_PB_SERIALIZE_FAILURE("new info"); return false;
+			route_net_info.clear_target_sockets();
+			{
+				lock_guard<mutex> local_lock(mutex_service_2info_);
+				auto service_2info_iter = service_2info_.find(route_net_info.service_name());
+				if(service_2info_iter == service_2info_.end()){
+					string service_names;
+					for(auto& service_info_item : service_2info_){
+						service_names += "," + service_info_item.first;
+					}
+					DEBUG_W("Can not find service name [" << route_net_info.service_name() << "] service name list [" << service_names << "]");
+					return true;
+				}
+				route_net_info.add_target_sockets(service_2info_iter->second->GetServiceSocket(route_net_info.service_addr()));
+			}
+		}
+		else{
+			if(!route_net_info.SerializeToString(net_info.mutable_net_binary())){
+				DEBUG_PB_SERIALIZE_FAILURE("new net info"); return false;
+			}
 		}
 
 		BinaryMemoryPtr send_packet = BuildSendPacket(binary, offset, net_info);
-		for(int32_t index = 0; index < route_net_info.target_sockets_size(); ++index){
-			DEBUG_E("route transfer socket [" << route_net_info.target_sockets(index) << "] binary [" << send_packet->to_hex() << "]");
-			if(!net_server_->Send(route_net_info.target_sockets(index), send_packet)){
+		for(int index = 0; index < route_net_info.target_sockets_size(); ++index){
+			if(net_server_->Send(route_net_info.target_sockets(index), send_packet) != eNetSendResult_Ok){
 				DEBUG_E("Fail to send message. socket [" << route_net_info.target_sockets(index) << "]");
 			}
 		}
@@ -274,6 +285,7 @@ bool RpcRoute::CommandProcess(Socket socket, const frpublic::BinaryMemory& binar
 			case eRouteCmd_EventCancel: return EventCancel(socket, route_request.request_binary());
 			case eRouteCmd_ServiceRegister: return ServiceRegister(socket, route_request.request_binary());
 			case eRouteCmd_ServiceCancel: return ServiceCancel(socket);
+			case eRouteCmd_EventNotice : DEBUG_W("Command-Event-Notice is not defined.");
 			default : DEBUG_E("Unkonw route command [" << route_request.cmd() << "]"); return false;
 		}
 	}
@@ -286,25 +298,6 @@ bool RpcRoute::HeartProcess(Socket socket, const frpublic::BinaryMemory& binary,
 	DEBUG_P("net heart packet.");
 	PacketSize size = *(const PacketSize*)binary.buffer(offset);
 	return net_server_->Send(socket, BinaryMemoryPtr(new BinaryMemory(binary.buffer(offset), size + sizeof(PacketSize)))) == eNetSendResult_Ok;
-}//}}}2
-
-frpublic::BinaryMemoryPtr RpcRoute::BuildSendPacket(const frpublic::BinaryMemory& binary, int32_t offset, const frrpc::network::NetInfo& net_info){// {{{2
-	BinaryMemoryPtr send_packet(new BinaryMemory());
-
-	PacketSize size = *(const PacketSize*)binary.buffer(offset);
-	NetInfoSize original_net_info_size = *(const NetInfoSize*)binary.buffer(offset + sizeof(PacketSize));
-	NetInfoSize cur_net_info_size = net_info.ByteSize();
-
-	int32_t cur_offset = offset + sizeof(PacketSize) + sizeof(NetInfoSize) + original_net_info_size;
-
-	send_packet->reserve(size + cur_net_info_size - original_net_info_size);
-	send_packet->add((void*)&size, sizeof(size));
-	send_packet->add((void*)&cur_net_info_size, sizeof(cur_net_info_size));
-	if(net_info.SerializeToArray(send_packet->CopyMemoryFromOut(cur_net_info_size), cur_net_info_size)){
-		send_packet->add(binary.buffer(cur_offset), size - cur_offset);
-	}
-
-	return send_packet;
 }//}}}2
 
 bool RpcRoute::EventRegister(Socket socket, const std::string& binary){// {{{2
@@ -378,14 +371,14 @@ bool RpcRoute::ServiceCancel(Socket socket){// {{{2
 }//}}}2
 
 bool RpcRoute::AddService(Socket service_socket, const std::string& service_name, const std::string& service_addr){// {{{2
-	DEBUG_P("Register new service. socket [" << service_socket << "] service_name [" << service_name << "] service_addr [" << service_addr << "]");
+	DEBUG_I("Register new service. socket [" << service_socket << "] service_name [" << service_name << "] service_addr [" << service_addr << "]");
 
 	std::lock_guard<mutex> local_lock(mutex_service_2info_);
-
 	service_socket_2name_.insert(make_pair(service_socket, service_name));
 
 	auto service_2info_iter = service_2info_.find(service_name);
 	if(service_2info_iter == service_2info_.end()){
+		DEBUG_P("Add new service [" << service_name << "]");
 		service_2info_.insert(make_pair(service_name, RouteServiceInfosPtr(new RouteServiceInfos(service_name))));
 		service_2info_iter = service_2info_.find(service_name);
 	}
@@ -400,6 +393,7 @@ bool RpcRoute::DeleteService(Socket service_socket){// {{{2
 	if(service_socket_2name_iter != service_socket_2name_.end()){
 		auto service_2info_iter = service_2info_.find(service_socket_2name_iter->second);
 		if(service_2info_iter != service_2info_.end()){
+			DEBUG_I("Unregister service. socket [" << service_socket << "] service_name [" << service_2info_iter->first << "]");
 			service_2info_iter->second->DeleteService(service_socket);
 			if(service_2info_iter->second->ServiceSize() == 0){
 				service_2info_.erase(service_2info_iter);
@@ -454,7 +448,33 @@ bool RpcRoute::SendEventNotice_Disconnect(Socket disconnect_socket){//{{{2
 	return ret;
 }//}}}2
 
+BinaryMemoryPtr RpcRoute::BuildSendPacket(const frpublic::BinaryMemory& binary, int32_t offset, const frrpc::network::NetInfo& net_info){//{{{2
+	BinaryMemoryPtr send_packet(new BinaryMemory());
+
+	PacketSize original_size = *(const PacketSize*)binary.buffer(offset);
+	NetInfoSize original_net_info_size = *(const NetInfoSize*)binary.buffer(offset + sizeof(PacketSize));
+
+	int32_t copy_offset = offset + sizeof(PacketSize) + sizeof(NetInfoSize) + original_net_info_size;
+	PacketSize copy_size = original_size - sizeof(NetInfoSize) - original_net_info_size;
+	
+	NetInfoSize cur_net_info_size = net_info.ByteSize();
+	PacketSize packet_size = original_size + cur_net_info_size - original_net_info_size;
+
+	send_packet->reserve(sizeof(PacketSize)+ packet_size);
+	send_packet->add((void*)&packet_size, sizeof(packet_size));
+	send_packet->add((void*)&cur_net_info_size, sizeof(cur_net_info_size));
+	if(net_info.SerializeToArray(send_packet->CopyMemoryFromOut(cur_net_info_size), cur_net_info_size)){
+		send_packet->add(binary.buffer(copy_offset), copy_size);
+		DEBUG_P("copy_offset " << copy_offset << " copy size " << copy_size << " cur_net_info_size " << cur_net_info_size 
+				<< " packet_size " << packet_size << " send_packet size " << send_packet->size() << " binary [" << send_packet->to_hex() << "]");
+		return send_packet;
+	}
+
+	return BinaryMemoryPtr();
+}//}}}2
+
 } // namepsace route
 } // namepsace frrpc
+
 //}}}1
 

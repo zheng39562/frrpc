@@ -23,7 +23,7 @@ bool IsAskedToQuit();
 
 // T must a number(int long shor etc).
 template <typename Integer>
-inline uint32_t GetNumberLength(Integer integer){
+uint32_t GetNumberLength(Integer integer){
 	uint32_t length(0);
 	do{
 		++length;

@@ -147,9 +147,9 @@ class RpcServer_Gate : public RpcNetServer{
 
 		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr);
 
-		inline LinkID BuildLinkID(GateID gate_id, Socket socket)const{ return socket * pow(10, gate_length_) + gate_id; }
-		inline Socket GetSocket(LinkID link_id)const{ return link_id % (uint32_t)pow(10, gate_length_); }
-		inline GateID GetGateID(LinkID link_id)const{ return link_id / (uint32_t)pow(10, gate_length_); }
+		inline LinkID BuildLinkID(GateID gate_id, Socket socket)const{ return gate_id * pow(10, gate_length_) + socket; }
+		inline Socket GetSocket(LinkID link_id)const{ return (Socket)(link_id % (uint32_t)pow(10, gate_length_)); }
+		inline GateID GetGateID(LinkID link_id)const{ return (GateID)(link_id / (uint32_t)pow(10, gate_length_)); }
 	private:
 		std::vector<RpcServer_Gate_Client*> gate_client_list_;
 		uint32_t gate_length_;

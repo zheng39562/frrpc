@@ -28,8 +28,10 @@ install:
 	cp ${BUILD_LIBRARY_PATH}/lib${PROJECT_NAME}.so ${OUTPUT_LIB_PATH}
 	cp -rf ${BUILD_INCLUDE_PATH}/${PROJECT_NAME} ${OUTPUT_INCLUDE_PATH}/
 
+#rm -rf ${OUTPUT_TEMPORARY_PATH}/*.o
+# 匹配问题等后续解决掉 分类去清
 clean :
-	rm -rf ${OUTPUT_TEMPORARY_PATH}/*.o
+	rm -rf ${OUTPUT_TEMPORARY_PATH}/../*
 	rm -f ${BUILD_LIBRARY_PATH}/lib${PROJECT_NAME}.so
 	rm -rf ${BUILD_INCLUDE_PATH}/${PROJECT_NAME}
 

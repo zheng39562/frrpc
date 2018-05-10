@@ -97,8 +97,6 @@ class RpcRoute : public frnet::NetListen{
 		bool CommandProcess(Socket socket, const frpublic::BinaryMemory& binary, int32_t offset, frrpc::network::NetInfo& net_info);
 		bool HeartProcess(Socket socket, const frpublic::BinaryMemory& binary, int32_t offset, frrpc::network::NetInfo& net_info);
 
-		frpublic::BinaryMemoryPtr BuildSendPacket(const frpublic::BinaryMemory& binary, int32_t offset, const frrpc::network::NetInfo& net_info);
-
 		bool EventRegister(Socket socket, const std::string& binary);
 		bool EventCancel(Socket socket, const std::string& binary);
 		bool EventNoticeDisconnect(Socket socket, const std::string& binary);
@@ -110,6 +108,8 @@ class RpcRoute : public frnet::NetListen{
 		inline bool IsServiceSocket(Socket socket)const{ return service_socket_2name_.find(socket) != service_socket_2name_.end(); };
 
 		bool SendEventNotice_Disconnect(Socket disconnect_socket);
+
+		frpublic::BinaryMemoryPtr BuildSendPacket(const frpublic::BinaryMemory& binary, int32_t offset, const frrpc::network::NetInfo& net_info);
 	private:
 		frnet::NetServer* net_server_;
 		RpcHeart rpc_heart_;

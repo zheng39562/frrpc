@@ -194,6 +194,8 @@ bool RpcServer_Gate_Client::Stop(){// {{{2
 }// }}}2
 	
 bool RpcServer_Gate_Client::Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body){// {{{2
+	RPC_DEBUG_P("Gate[" << gate_id() << "] send message. [" << meta.service_name() << "." << meta.method_index() << "]");
+
 	RouteNetInfo route_net_info;
 	route_net_info.set_is_channel_packet(false);
 	route_net_info.set_service_name(meta.service_name());
@@ -249,9 +251,11 @@ bool RpcServer_Gate_Client::RegisterService(const std::string& service_name, con
 
 bool RpcServer_Gate_Client::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){// {{{2
 	int32_t offset(0);
-	while((binary.size() - read_size) > sizeof(PacketSize)){
+	DEBUG_D("receive size [" << binary.size() << "] read_size [" << read_size << "]");
+	while((binary.size() - offset) > sizeof(PacketSize)){
 		PacketSize size(*(const PacketSize*)binary.buffer()); 
 		if(size + sizeof(size) > (binary.size() - read_size)){ 
+			DEBUG_P("packet is not complete.");
 			return true; 
 		}
 
@@ -265,6 +269,7 @@ bool RpcServer_Gate_Client::OnReceive(Socket socket, const frpublic::BinaryMemor
 				return ReturnError("Error : GetMessageFromBinary.");
 			}
 
+			DEBUG_D("receive net_type(" << net_info.net_type() << ")");
 			switch(net_info.net_type()){
 				case eNetType_Route: if(!ReceiveRoutePacket(net_info, packet)){ return false; } break;
 				case eNetType_RouteCmd: if(!PerformRouteCmd(net_info)){ return false; } break;
@@ -302,15 +307,15 @@ bool RpcServer_Gate_Client::ReturnError(const std::string& err_info){// {{{2
 }// }}}2
 
 bool RpcServer_Gate_Client::ReceiveRoutePacket(NetInfo& net_info, RpcPacketPtr& packet){//{{{2
+
 	frrpc::route::RouteNetInfo route_net_info;
 	if(route_net_info.ParseFromString(net_info.net_binary())){
-		for(int index = 0; index < route_net_info.target_sockets_size(); ++index){
-			RpcPacketPtr packet_tmp(new RpcPacket(*packet));
-			packet_tmp->link_id = rpc_server_gate_->BuildLinkID(gate_id(), route_net_info.target_sockets(index));
-
-			rpc_server_gate_->PushMessageToQueue(packet_tmp);
-		}
+		RpcPacketPtr packet_tmp(new RpcPacket(*packet));
+		packet_tmp->link_id = rpc_server_gate_->BuildLinkID(gate_id(), route_net_info.source_socket());
+		rpc_server_gate_->PushMessageToQueue(packet_tmp);
 	}
+	else{ DEBUG_E("Fail to parse route net info. net_info size " << net_info.net_binary().size()); return false; }
+
 	return true;
 }//}}}2
 
@@ -397,11 +402,12 @@ bool RpcServer_Gate::Send(Controller* cntl, const RpcMeta& meta, const google::p
 
 	set<GateID> gate_ids;
 	for(int index = 0; index < cntl->link_size(); ++index){
+		RPC_DEBUG_P("send to route [" << GetGateID(cntl->link_id(index)) << "] gate length " << gate_length_ << " link id " << cntl->link_id(index));
 		gate_ids.insert(GetGateID(cntl->link_id(index)));
 	}
 
-	bool ret(true);
-	for(auto& gate_id : gate_ids){
+	bool ret(!gate_ids.empty());
+	for(auto gate_id : gate_ids){
 		if(gate_id < gate_client_list_.size()){
 			ret &= (gate_client_list_[gate_id]->Send(cntl, meta, body) == eNetSendResult_Ok);
 		}
