@@ -1,39 +1,34 @@
-include ../../make/config.mk
+all: route rpc
 
-PROJECT_NAME=frrpc
-PROJECT_OBJECTS= \
-	./$(OUTPUT_TEMPORARY_PATH)/./world.pb.o \
-	./$(OUTPUT_TEMPORARY_PATH)/./world_server.o
+install: route_install rpc_install 
 
-EXAMPLE_NAME=example_${PROJECT_NAME}
-EXAMPLE_OBJECTS= \
-	./$(OUTPUT_TEMPORARY_PATH)/./world.pb.o \
-	./$(OUTPUT_TEMPORARY_PATH)/./world_example.o \
+clean: route_clean rpc_clean
 
-all : ${PROJECT_OBJECTS}
-	mkdir -p ${BUILD_LIBRARY_PATH}
-	mkdir -p ${BUILD_INCLUDE_PATH}/${PROJECT_NAME}
-	g++ ${COMMON_CFLAGS} ${COMMON_LIBRARY} ${PROJECT_OBJECTS} ${PUBLIC_COMMON_LIBRARY} -fPIC -shared -o ${BUILD_LIBRARY_PATH}/lib${PROJECT_NAME}.so
-	cp -f ${BUILD_LIBRARY_PATH}/lib${PROJECT_NAME}.so ${BUILD_EXECUTE_PATH}/
-	cp -rf *.h ${BUILD_INCLUDE_PATH}/${PROJECT_NAME}
-	$(call BuildEngineScript, ${PROJECT_NAME}, ${FREEDOM_COMMON_IP}, ${FREEDOM_WORLD_PORT})
+route:
+	cd ./src/route/ && make
 
-install:
-	cp ${BUILD_LIBRARY_PATH}/lib${PROJECT_NAME}.so ${OUTPUT_LIB_PATH}
-	cp -rf ${BUILD_INCLUDE_PATH}/${PROJECT_NAME} ${OUTPUT_INCLUDE_PATH}/
+route_install:
+	cd ./src/route/ && make install
 
-clean :
-	rm -rf ${OUTPUT_TEMPORARY_PATH}/*.o
-	rm -f ${BUILD_LIBRARY_PATH}/lib${PROJECT_NAME}.so
-	rm -rf ${BUILD_INCLUDE_PATH}/${PROJECT_NAME}
-	rm -f ${BUILD_EXECUTE_PATH}/${EXAMPLE_NAME}
+route_clean:
+	cd ./src/route/ && make clean
 
-proto : 
-	protoc --proto_path=./ --cpp_out=./ world.proto	
+rpc:
+	cd ./src/rpc/ && make
 
-example : ${EXAMPLE_OBJECTS}
-	mkdir -p ${BUILD_EXECUTE_PATH}
-	g++ ${COMMON_CFLAGS} ${COMMON_LIBRARY} ${EXAMPLE_OBJECTS} ${PUBLIC_COMMON_LIBRARY} -o ${BUILD_EXECUTE_PATH}/${EXAMPLE_NAME}
-	rm -f ${BUILD_EXECUTE_PATH}/${EXAMPLE_NAME}_start.sh
-	$(call BuildExampleScript, ${EXAMPLE_NAME}, ${FREEDOM_COMMON_IP}, ${FREEDOM_WORLD_PORT})
+rpc_install:
+	cd ./src/rpc/ && make install
+
+rpc_clean:
+	cd ./src/rpc/ && make clean
+
+# 编译所有的用例(demo和test)
+example_all:
+	cd ./example/connect && make
+	cd ./example/echo_async && make
+	cd ./example/echo_sync && make
+	cd ./example/tcp_self_echo && make
+	
+help:
+	echo "help doc"
 

@@ -10,7 +10,7 @@
 
 #include "frpublic/pub_memory.h"
 #include "frpublic/pub_tool.h"
-#include "common/rpc_serializable.h"
+#include "public/rpc_serializable.h"
 #include "controller.h"
 #include "frrpc_function.h"
 

@@ -16,7 +16,7 @@
 #include "frpublic/pub_memory.h"
 #include "frrpc_define.h"
 #include "controller.h"
-#include "common/rpc_serializable.h"
+#include "public/rpc_serializable.h"
 
 namespace frrpc{
 namespace network{

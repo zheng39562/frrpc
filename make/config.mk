@@ -3,7 +3,7 @@ COMMON_SQL_LIBRARY=-lfrsql -lmysqlcppconn
 COMMON_LIBRARY_PATH=-L/usr/ -L../../build/lib/
 COMMON_INCLUDE=-I../../src/
 COMMON_MACRO=-D__LINUX -D__FRNET_EPOLL
-#COMMON_OPTION=-Wl,--no-as-needed
+COMMON_OPTION=-Wl,--no-as-needed
 COMMON_CFLAGS=-g -std=c++11
 COMMON_CXX=g++
 
@@ -17,26 +17,13 @@ BUILD_EXECUTE_PATH=../../build/bin
 OUTPUT_LIB_PATH=/usr/lib64
 OUTPUT_INCLUDE_PATH=/usr/local/include
 OUTPUT_EXECUTE_PATH=/usr/local/bin
-OUTPUT_TEMPORARY_PATH=../../out/out
-OUTPUT_EXAMPLE_PATH=../../out/out
+OUTPUT_TEMPORARY_PATH=../../out/tmp
+OUTPUT_EXAMPLE_PATH=../../out/tmp
 
-.PHONY: clean all install example
+.PHONY: clean all install example test
 
 # ------------------------------------------------------------------------------------------------------------------------
-# 匹配规则
-# --- pb pattern ---  (还为生效，需要进一步研究makefile的匹配规则，期望能够在out中自动生成，而不是独立一个目录)
-./${OUTPUT_TEMPORARY_PATH}/../pb/%.o : %.cpp
-	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
-
-./${OUTPUT_TEMPORARY_PATH}/../pb/%.o : %.cc
-	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
-
-./${OUTPUT_TEMPORARY_PATH}/../pb/%.o : %.c
-	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
-# --- common pattern --- 
+# --- cpp pattern --- 
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.cpp
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
 	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
@@ -49,7 +36,6 @@ OUTPUT_EXAMPLE_PATH=../../out/out
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
 	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
 # ------------------------------------------------------------------------------------------------------------------------
-
 
 FREEDOM_COMMON_IP=127.0.0.1
 FREEDOM_WORLD_PORT=12000

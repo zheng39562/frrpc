@@ -16,7 +16,7 @@
 #include "rpc_base_net.h"
 #include "frrpc_define.h"
 #include "frnet/frnet_interface.h"
-#include "common/rpc_heart.h"
+#include "public/rpc_heart.h"
 
 namespace frrpc{
 namespace network{

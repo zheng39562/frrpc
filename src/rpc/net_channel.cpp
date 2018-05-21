@@ -9,7 +9,7 @@
 #include "net_channel.h"
 
 #include "pb/route.pb.h"
-#include "common/rpc_serializable.h"
+#include "public/rpc_serializable.h"
 
 using namespace std;
 using namespace frpublic;

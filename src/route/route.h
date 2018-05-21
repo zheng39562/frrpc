@@ -16,7 +16,7 @@
 #include "pb/net.pb.h"
 #include "pb/route.pb.h"
 #include "frnet/frnet_interface.h"
-#include "common/rpc_heart.h"
+#include "public/rpc_heart.h"
 
 #include "route_define.h"
 

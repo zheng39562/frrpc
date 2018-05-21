@@ -10,7 +10,7 @@
 
 #include "pb/net.pb.h"
 #include "frpublic/pub_tool.h"
-#include "common/rpc_serializable.h"
+#include "public/rpc_serializable.h"
 
 using namespace std;
 using namespace frnet;
