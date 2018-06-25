@@ -17,17 +17,17 @@ using namespace frnet;
 using namespace frpublic;
 using namespace frrpc::network;
 
-namespace frrpc{// {{{1
+namespace frrpc{
 
-BinaryMemoryPtr BuildHeartPacket(){//{{{2
+BinaryMemoryPtr BuildHeartPacket(){
 	NetInfo net_info;
 	net_info.set_net_type(eNetType_Heart);
 	return BuildBinaryFromMessage(net_info);
-}//}}}2
+}
 
 frpublic::BinaryMemoryPtr RpcHeart::static_heart_packet_ = BuildHeartPacket();
 
-RpcHeart::RpcHeart()// {{{2
+RpcHeart::RpcHeart()
 	:running_(false),
 	 is_client_(true),
 	 thread_heart_time_(),
@@ -35,16 +35,16 @@ RpcHeart::RpcHeart()// {{{2
 	 wait_heart_array_(),
 	 socket_array_()
 { 
-}//}}}2
+}
 
-RpcHeart::~RpcHeart(){ // {{{2
+RpcHeart::~RpcHeart(){ 
 	if(thread_heart_time_.joinable()){
 		thread_heart_time_.join();
 	}
 
-}//}}}2
+}
 
-void RpcHeart::RunClient(frnet::NetClient* client, time_t timeout){//{{{2
+void RpcHeart::RunClient(frnet::NetClient* client, time_t timeout){
 	is_client_ = true;
 	running_ = true;
 	thread_heart_time_ = thread([&](frnet::NetClient* client, time_t timeout){
@@ -58,7 +58,7 @@ void RpcHeart::RunClient(frnet::NetClient* client, time_t timeout){//{{{2
 
 					eNetSendResult ret = client->Send(static_heart_packet_);
 					if(ret != eNetSendResult_Ok){
-						DEBUG_E("Channel fail to send heart. ret [" << ret << "]");
+						DEBUG_E("Channel fail to send heart. ret [%d]", ret);
 					}
 				}
 
@@ -66,9 +66,9 @@ void RpcHeart::RunClient(frnet::NetClient* client, time_t timeout){//{{{2
 			}
 		}
 	}, client, timeout);
-}//}}}2
+}
 
-void RpcHeart::RunServer(frnet::NetServer* server, time_t timeout){//{{{2
+void RpcHeart::RunServer(frnet::NetServer* server, time_t timeout){
 	is_client_ = false;
 	running_ = true;
 	thread_heart_time_ = thread([&](frnet::NetServer* server, time_t timeout){
@@ -81,7 +81,7 @@ void RpcHeart::RunServer(frnet::NetServer* server, time_t timeout){//{{{2
 					std::lock_guard<mutex> lock(mutex_socket_);
 
 					for(auto& socket : wait_heart_array_){
-						DEBUG_I("socket[" << socket << "] heart timeout.");
+						DEBUG_I("socket[%d] heart timeout.", socket);
 						server->Disconnect(socket);
 						socket_array_.erase(socket);
 					}
@@ -95,9 +95,9 @@ void RpcHeart::RunServer(frnet::NetServer* server, time_t timeout){//{{{2
 		}
 		else{ DEBUG_E("server is null."); }
 	}, server, timeout);
-}//}}}2
+}
 
-void RpcHeart::StopHeartCheck(){// {{{2
+void RpcHeart::StopHeartCheck(){
 	running_ = false;
 	if(thread_heart_time_.joinable()){
 		thread_heart_time_.join();
@@ -106,30 +106,30 @@ void RpcHeart::StopHeartCheck(){// {{{2
 	lock_guard<mutex> lock(mutex_socket_);
 	socket_array_.clear();
 	wait_heart_array_.clear();
-}// }}}2
+}
 
-void RpcHeart::DelSocket(Socket socket){//{{{2
+void RpcHeart::DelSocket(Socket socket){
 	if(running_ && !is_client_){
 		lock_guard<mutex> lock(mutex_socket_);
 		wait_heart_array_.erase(socket);
 		socket_array_.erase(socket);
 	}
-}//}}}2
+}
 
-void RpcHeart::AddSocket(Socket socket){//{{{2
+void RpcHeart::AddSocket(Socket socket){
 	if(running_ && !is_client_){
 		lock_guard<mutex> lock(mutex_socket_);
 		socket_array_.insert(socket);
 	}
-}//}}}2
+}
 
-void RpcHeart::UpdateSocket(Socket socket){//{{{2
+void RpcHeart::UpdateSocket(Socket socket){
 	if(running_ && !is_client_ && wait_heart_array_.find(socket) != wait_heart_array_.end()){
 		lock_guard<mutex> lock(mutex_socket_);
-		DEBUG_P("receive msg update socket heart [" << socket << "]");
+		DEBUG_P("receive msg update socket heart [%d]", socket);
 		wait_heart_array_.erase(socket);
 	}
-}//}}}2
+}
 
 
-}//}}}1
+}

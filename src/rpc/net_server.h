@@ -9,20 +9,14 @@
 #ifndef _net_server_H
 #define _net_server_H
 
-#include <thread>
-#include <mutex>
 #include <math.h>
-
-#include "rpc_base_net.h"
-#include "frrpc_define.h"
 #include "frnet/frnet_interface.h"
-#include "public/rpc_heart.h"
 #include "pb/route.pb.h"
+#include "public/rpc_heart.h"
+#include "rpc/rpc_base_net.h"
 
 namespace frrpc{
 namespace network{
-
-// class RpcServer_Server {{{1
 
 class RpcServer_Server : public RpcNetServer, public frnet::NetListen{
 	public:
@@ -70,25 +64,22 @@ class RpcServer_Server : public RpcNetServer, public frnet::NetListen{
 		NetInfo net_info_;
 		RpcHeart rpc_heart_;
 };
-// }}}1
 
-// class RpcServer_Gate {{{1
 
-// class RpcServer_Gate_Client {{{2
-class RpcServer_Gate;
-class RpcServer_Gate_Client : public frnet::NetListen{
+class RpcServer_Route;
+class RpcServer_Route_Client : public frnet::NetListen{
 	public:
-		RpcServer_Gate_Client(RpcServer_Gate* rpc_server_gate, GateID gate_id, const std::string& ip, Port);
-		RpcServer_Gate_Client(const RpcServer_Gate_Client& ref)=delete;
-		RpcServer_Gate_Client& operator=(const RpcServer_Gate_Client& ref)=delete;
-		virtual ~RpcServer_Gate_Client();
+		RpcServer_Route_Client(RpcServer_Route* rpc_server_route, RouteID route_id, const std::string& ip, Port);
+		RpcServer_Route_Client(const RpcServer_Route_Client& ref)=delete;
+		RpcServer_Route_Client& operator=(const RpcServer_Route_Client& ref)=delete;
+		virtual ~RpcServer_Route_Client();
 	public:
 		bool Start();
 		bool Stop();
 
 		inline const std::string& ip()const{ return ip_; }
 		inline Port port()const{ return port_; }
-		inline GateID gate_id()const{ return gate_id_; }
+		inline RouteID route_id()const{ return route_id_; }
 
 		bool Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body);
 
@@ -117,26 +108,25 @@ class RpcServer_Gate_Client : public frnet::NetListen{
 		bool ReceiveEventNotice(frrpc::route::RouteResponse route_response);
 	private:
 		frnet::NetClient* net_client_;
-		GateID gate_id_;
+		RouteID route_id_;
 		std::string ip_;
 		Port port_;
-		RpcServer_Gate* rpc_server_gate_;
+		RpcServer_Route* rpc_server_route_;
 		Byte receive_buffer_[NET_PACKET_MAX_SIZE];
 		RpcHeart rpc_heart_;
-};// }}}2
+};
 
-// class RpcServer_Gate {{{2
 // TODO:
 //	* reconnection
 //	* 
-class RpcServer_Gate : public RpcNetServer{
+class RpcServer_Route : public RpcNetServer{
 	public:
-		friend class RpcServer_Gate_Client;
+		friend class RpcServer_Route_Client;
 	public:
-		RpcServer_Gate(const std::vector<std::tuple<std::string, Port> >& gate_list);
-		RpcServer_Gate(const RpcServer_Gate& ref)=delete;
-		RpcServer_Gate& operator=(const RpcServer_Gate& ref)=delete;
-		virtual ~RpcServer_Gate();
+		RpcServer_Route(const std::vector<std::tuple<std::string, Port> >& route_list);
+		RpcServer_Route(const RpcServer_Route& ref)=delete;
+		RpcServer_Route& operator=(const RpcServer_Route& ref)=delete;
+		virtual ~RpcServer_Route();
 	public:
 		virtual bool Start();
 		virtual bool Stop();
@@ -147,16 +137,16 @@ class RpcServer_Gate : public RpcNetServer{
 
 		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr);
 
-		inline LinkID BuildLinkID(GateID gate_id, Socket socket)const{ return gate_id * pow(10, gate_length_) + socket; }
-		inline Socket GetSocket(LinkID link_id)const{ return (Socket)(link_id % (uint32_t)pow(10, gate_length_)); }
-		inline GateID GetGateID(LinkID link_id)const{ return (GateID)(link_id / (uint32_t)pow(10, gate_length_)); }
+		inline LinkID BuildLinkID(RouteID route_id, Socket socket)const{ return route_id * pow(10, route_length_) + socket; }
+		inline Socket GetSocket(LinkID link_id)const{ return (Socket)(link_id % (uint32_t)pow(10, route_length_)); }
+		inline RouteID GetRouteID(LinkID link_id)const{ return (RouteID)(link_id / (uint32_t)pow(10, route_length_)); }
 	private:
-		std::vector<RpcServer_Gate_Client*> gate_client_list_;
-		uint32_t gate_length_;
+		std::vector<RpcServer_Route_Client*> route_client_list_;
+		uint32_t route_length_;
 };
-// }}}2
 
-// }}}1
+
+
 
 } // namespace network
 } // namespace frrpc

@@ -17,11 +17,10 @@
 #include "frpublic/pub_memory.h"
 #include "frnet/frnet_interface.h"
 
-namespace frrpc{// {{{1
+namespace frrpc{
 
 frpublic::BinaryMemoryPtr BuildHeartPacket();
 
-// class RpcHeart {{{2
 // TODO:
 //	Client disconnect: client only send heart now.It does not check heart response.
 //		* bool SendResponse(Socket socket);
@@ -37,8 +36,8 @@ class RpcHeart{
 		// Recall Run or Stop is not useless.
 		//
 		// unit of timeout is second. Use Sleep function, so it is not very accurate.
-		void RunClient(frnet::NetClient* client, time_t timeout = 60);
-		void RunServer(frnet::NetServer* server, time_t timeout = 60);
+		void RunClient(frnet::NetClient* client, time_t timeout = NET_HEART_TIMEOUT);
+		void RunServer(frnet::NetServer* server, time_t timeout = NET_HEART_TIMEOUT);
 		void StopHeartCheck();
 
 		void DelSocket(Socket socket);
@@ -54,10 +53,8 @@ class RpcHeart{
 		std::set<Socket> wait_heart_array_;
 		std::set<Socket> socket_array_;
 };
-//}}}2
-//
 
-} //}}}1
+}
 
 #endif 
 

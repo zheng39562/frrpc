@@ -15,55 +15,53 @@ using namespace frrpc::network;
 
 namespace frrpc{
 
-Controller::Controller()// {{{2
-	:net_event_(eNetEvent_Invalid),
-	 link_ids_(NULL),
+Controller::Controller()
+	:link_ids_(NULL),
 	 service_addr_(NULL)
 {
 	;
-}//}}}2
+}
 
-Controller::~Controller(){// {{{2
+Controller::~Controller(){
 	DELETE_POINT_IF_NOT_NULL(link_ids_);
 	DELETE_POINT_IF_NOT_NULL(service_addr_);
-}//}}}2
+}
 
-void Controller::Reset(){// {{{2
+void Controller::Reset(){
 	;
-}//}}}2
+}
 
-bool Controller::Failed() const{// {{{2
+bool Controller::Failed() const{
 	return true;
-}//}}}2
+}
 
-string Controller::ErrorText() const{// {{{2
+string Controller::ErrorText() const{
 	return "";
-}//}}}2
+}
 
-void Controller::StartCancel(){// {{{2
+void Controller::StartCancel(){
 	;
-}//}}}2
+}
 
-void Controller::SetFailed(const string& reason){// {{{2
+void Controller::SetFailed(const string& reason){
 	;
-}//}}}2
+}
 
-bool Controller::IsCanceled() const{// {{{2
+bool Controller::IsCanceled() const{
 	return false;
-}//}}}2
+}
 
-void Controller::NotifyOnCancel(Closure* callback){// {{{2
+void Controller::NotifyOnCancel(Closure* callback){
 	;
-}//}}}2
+}
 
-void Controller::Clear(){// {{{2
-	net_event_ = eNetEvent_Invalid;
+void Controller::Clear(){
 
 	if(link_ids_ != NULL){ link_ids_->clear(); }
 	if(service_addr_ != NULL){ service_addr_->clear(); }
-}//}}}2
+}
 
-std::string Controller::info()const{//{{{2
+std::string Controller::info()const{
 	std::string info;
 	info += " link_id: ";
 	if(link_ids_ == nullptr){
@@ -76,10 +74,9 @@ std::string Controller::info()const{//{{{2
 	}
 
 	info += " service_addr: [" + service_addr() + "]";
-	info += " net_type: [" + std::to_string(net_event()) + "]";
 
 	return info;
-}//}}}2
+}
 
 }// namespace frrpc{
 

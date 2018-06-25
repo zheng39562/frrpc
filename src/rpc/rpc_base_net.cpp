@@ -9,7 +9,7 @@
 #include "rpc_base_net.h"
 
 #include "frpublic/pub_tool.h"
-#include "frrpc_function.h"
+#include "rpc/frrpc_function.h"
 
 using namespace std;
 using namespace frpublic;
@@ -18,34 +18,30 @@ using namespace google::protobuf;
 namespace frrpc{
 namespace network{
 
-// Class RpcBaseNet {{{1
-
-RpcBaseNet::RpcBaseNet()// {{{2
+RpcBaseNet::RpcBaseNet()
 	:packet_queue_()
 {
 	;
-}// }}}2
+}
 
-RpcBaseNet::~RpcBaseNet(){ // {{{2
-}// }}}2
+RpcBaseNet::~RpcBaseNet(){ 
+}
 
-void RpcBaseNet::FetchMessageQueue(std::queue<RpcPacketPtr>& packet_queue, int32_t max_queue_size){// {{{2
+void RpcBaseNet::FetchMessageQueue(std::queue<RpcPacketPtr>& packet_queue, int32_t max_queue_size){
 	packet_queue_.pop(packet_queue, max_queue_size);
-}// }}}2
+}
 
-void RpcBaseNet::PushMessageToQueue(const RpcPacketPtr& packet){// {{{2
+void RpcBaseNet::PushMessageToQueue(const RpcPacketPtr& packet){
 	if(packet != NULL){
-		RPC_DEBUG_P("receive a complete packet. " 
-				<< "link_id [" << packet->link_id << "]" << "net_event [" << packet->net_event << "]" 
-				<< "name [" << packet->rpc_meta.service_name() << "." << packet->rpc_meta.method_index() << "]" << "binary [" << (packet->binary != nullptr ? packet->binary->to_hex() : "empty binary") << "]");
+		RPC_DEBUG_P("receive a complete packet. link id [%d] net event [%d] name [%s.%d] binary [%s]", packet->link_id, packet->net_event, packet->rpc_meta.service_name().c_str(), packet->rpc_meta.method_index(), (packet->binary != nullptr ? packet->binary->to_hex().c_str() : "empty binary"));
 		packet_queue_.push(packet);
 	}
 	else{
 		RPC_DEBUG_E("packet is null. Please check.");
 	}
-}// }}}2
+}
 
-bool RpcBaseNet::GetAndCheckPacketSize(const void* buffer, PacketSize& size){// {{{2
+bool RpcBaseNet::GetAndCheckPacketSize(const void* buffer, PacketSize& size){
 	if(buffer == NULL){
 		RPC_DEBUG_E("point is null."); return false;
 	}
@@ -58,9 +54,7 @@ bool RpcBaseNet::GetAndCheckPacketSize(const void* buffer, PacketSize& size){// 
 		RPC_DEBUG_E("size is zero."); return false; 
 	}
 	return true;
-}//}}}2
-
-// Class RpcBaseNet }}}1
+}
 
 } // namespace network
 } // namespace frrpc

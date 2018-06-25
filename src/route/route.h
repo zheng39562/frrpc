@@ -17,15 +17,13 @@
 #include "pb/route.pb.h"
 #include "frnet/frnet_interface.h"
 #include "public/rpc_heart.h"
+#include "route/route_define.h"
 
-#include "route_define.h"
-
-namespace frrpc{ // {{{1
+namespace frrpc{
 namespace route{ 
 
-	std::string GetCommandName(eRouteCmd cmd);
+std::string GetCommandName(eRouteCmd cmd);
 
-// class RouteServiceInfos {{{2
 class RouteServiceInfos{
 	public:
 		RouteServiceInfos(const std::string& service_name);
@@ -47,9 +45,8 @@ class RouteServiceInfos{
 		int32_t cur_send_index_;
 };
 typedef std::shared_ptr<RouteServiceInfos> RouteServiceInfosPtr;
-//}}}2
 
-// class RpcRoute{{{2
+
 // 
 // * 接受channel的数据，并根据servicename转发给service.
 // * channel未绑定service时(无状态服): 针对此的均衡负载方案无，暂时以顺序去发送(即每个service平均分担一个消息来解决.)
@@ -69,7 +66,10 @@ class RpcRoute : public frnet::NetListen{
 		virtual ~RpcRoute();
 	public:
 		inline bool Start(const std::string& ip, Port port){ 
-			if(net_server_->Start(ip, port)){ rpc_heart_.RunServer(net_server_); return true; }
+			if(net_server_->Start(ip, port)){ 
+				rpc_heart_.RunServer(net_server_); 
+				return true; 
+			}
 			else{ return false; } 
 		}
 		inline bool Stop(){ 
@@ -122,11 +122,10 @@ class RpcRoute : public frnet::NetListen{
 		std::map<Socket, std::set<Socket> > event_dis_notice_2listen_; // socket listen socket list
 		std::map<Socket, std::set<Socket> > event_dis_listen_2notice_; // notice list when socket disconnect
 };
-//}}}2
+
 
 } // namespace route
 } // namespace frrpc
-//}}}1
 
 #endif 
 

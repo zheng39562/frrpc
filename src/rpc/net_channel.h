@@ -9,19 +9,14 @@
 #ifndef _net_client_H
 #define _net_client_H
 
-#include <thread>
-#include <mutex>
 #include <math.h>
-
-#include "rpc_base_net.h"
-#include "frrpc_define.h"
 #include "frnet/frnet_interface.h"
+#include "pb/route.pb.h"
 #include "public/rpc_heart.h"
+#include "rpc/rpc_base_net.h"
 
 namespace frrpc{
 namespace network{
-
-// class RpcChannel_Server {{{1
 
 class RpcChannel_Server : public RpcBaseNet, public frnet::NetListen{
 	public:
@@ -63,9 +58,9 @@ class RpcChannel_Server : public RpcBaseNet, public frnet::NetListen{
 		Port port_;
 		RpcHeart rpc_heart_;
 };
-// }}}1
 
-class RpcChannel_Route : public RpcBaseNet, public frnet::NetListen{ /// {{{1
+
+class RpcChannel_Route : public RpcBaseNet, public frnet::NetListen{
 	public:
 		RpcChannel_Route(const std::string &ip, Port port);
 		RpcChannel_Route(const RpcChannel_Route &ref)=delete;
@@ -109,7 +104,7 @@ class RpcChannel_Route : public RpcBaseNet, public frnet::NetListen{ /// {{{1
 		RpcHeart rpc_heart_;
 };
 
-// }}}1
+
 
 } // namespace network
 } // namespace frrpc

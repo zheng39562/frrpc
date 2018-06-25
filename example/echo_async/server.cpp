@@ -63,8 +63,8 @@ int main(int argc, char* argv[]){
 
 	frrpc::ServerOption option;
 	frrpc::Server server(option);
-	if("Gate" == connect_option || connect_option == "gate"){
-		if(!server.StartGate({ tuple<string, Port>(g_ip_, g_port_) })){
+	if("Route" == connect_option || connect_option == "route"){
+		if(!server.StartRoute({ tuple<string, Port>(g_ip_, g_port_) })){
 			DEBUG_E("Fail to start server.");
 			return -1;
 		}

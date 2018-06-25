@@ -10,10 +10,9 @@
 #define _rpc_controller_H
 
 #include <google/protobuf/service.h>
-
-#include "closure.h"
-#include "frrpc_define.h"
 #include "pb/net.pb.h"
+#include "rpc/closure.h"
+#include "rpc/frrpc_define.h"
 
 namespace frrpc{
 
@@ -104,10 +103,6 @@ class Controller : public google::protobuf::RpcController {
 		inline LinkID link_id(int index = 0)const{ return (link_ids_ != NULL && index >= 0 && link_ids_->size() > index) ? link_ids_->at(index) : RPC_LINK_ID_NULL; }
 		inline size_t link_size()const{ return link_ids_ != NULL ? link_ids_->size() : 0; }
 
-		// type of message.
-		inline frrpc::network::eNetEvent net_event()const{ return net_event_; }
-		inline void set_net_event(frrpc::network::eNetEvent net_event){ net_event_ = net_event; }
-
 		// service addr
 		inline std::string service_addr()const{ if(service_addr_ == NULL){ return ""; } return *service_addr_; }
 		inline void set_service_addr(const std::string& service_addr){ 
@@ -121,9 +116,6 @@ class Controller : public google::protobuf::RpcController {
 
 	private:
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Controller);
-
-	private:
-		frrpc::network::eNetEvent net_event_;
 
 		std::vector<LinkID>* link_ids_;
 		std::string* service_addr_;

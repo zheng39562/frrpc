@@ -10,29 +10,23 @@
 #define _frrpc_define_H
 
 #include "public_define.h"
-#include "frrpc_log.h"
+#include "rpc/frrpc_log.h"
 #include <string>
 
-// enum {{{2
 
-// }}}2
-
-// marco function. // {{{2
+// marco function. 
 #define BYTE_CONVERT_TO_TYPE_OFFSET(byte_ptr, type, offset) *(const type*)((const Byte*)byte_ptr + offset)
 #define DELETE_POINT_IF_NOT_NULL(ptr) if(ptr != NULL){ delete ptr; ptr = NULL; }
 #define ADDR_MOVE_BY_BYTE(ptr, offset) (void*)((char*)ptr + offset)
 #define CONST_ADDR_MOVE_BY_BYTE(ptr, offset) (const void*)((const char*)ptr + offset)
 
 inline std::string ConvertMethodKey(const std::string& service_name, int method_index){ return service_name + "." + std::to_string(method_index); }
-// }}}2
 
-// marco number {{{2
+
 #define RPC_REQUEST_ID_NULL 0
 #define RPC_LINK_ID_NULL 0
-// }}}2
 
-// common class {{{2
-// }}}2
+
 
 #endif 
 

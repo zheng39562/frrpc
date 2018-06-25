@@ -48,7 +48,7 @@ bool IsAskedToQuit(){
 	pthread_once(&frrpc_func_s_signal_handle_once, RegisterQuitSignal);
 	return g_is_quit;
 }
-//}}}1
+
 
 // param[1] route ini file.
 int main(int argc, char* argv[]){
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]){
 	SingleLogServer::GetInstance()->set_log_level("route", frpublic::eLogLevel_Program);
 
 	if(!SingleIniCfg::GetInstance()->InitFile((argc > 1 ? string(argv[1]) : "./route.ini"))){
-		DEBUG_E("Fail to read ini. file path [" << (argc > 1 ? string(argv[1]) : "./route.ini") << "]");
+		DEBUG_E("Fail to read ini. file path [%s]", argc > 1 ? argv[1] : "./route.ini");
 		return -1;
 	}
 

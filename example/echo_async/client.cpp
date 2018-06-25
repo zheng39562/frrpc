@@ -15,7 +15,7 @@
 using namespace std;
 
 /*
-	* 完善所有的测试用例, 简易的测试用例都当做demo使用.(每个用力都需要server 版本和 gate版本)
+	* 完善所有的测试用例, 简易的测试用例都当做demo使用.(每个用力都需要server 版本和 route版本)
 	* 需要测试
 		* rpc请求服务
 		* 连接，断开，以及相关的通知功能.
@@ -86,11 +86,11 @@ int main(int argc, char* argv[]){
 
 	frrpc::ChannelOption channel_option;
 	frrpc::Channel channel(channel_option);
-	if("Gate" == connect_option || connect_option == "gate"){
-		// connect gate.
+	if("Route" == connect_option || connect_option == "Route"){
+		// connect route.
 		// you must launch route.
-		if(!channel.StartGate(g_ip_, g_port_)) {
-			DEBUG_E("Fail to start gate.");
+		if(!channel.StartRoute(g_ip_, g_port_)) {
+			DEBUG_E("Fail to start route.");
 			return -1;
 		}
 	}

@@ -18,12 +18,12 @@ namespace frrpc{
 } // namespace frrpc
 
 #define LOG_KEY	"frrpc"
-#define RPC_DEBUG_P(msg) if(frrpc::IsOpenLog()){ K_DEBUG_P(LOG_KEY, msg) }
-#define RPC_DEBUG_D(msg) if(frrpc::IsOpenLog()){ K_DEBUG_D(LOG_KEY, msg) }
-#define RPC_DEBUG_I(msg) if(frrpc::IsOpenLog()){ K_DEBUG_I(LOG_KEY, msg) }
-#define RPC_DEBUG_W(msg) if(frrpc::IsOpenLog()){ K_DEBUG_W(LOG_KEY, msg) }
-#define RPC_DEBUG_E(msg) if(frrpc::IsOpenLog()){ K_DEBUG_E(LOG_KEY, msg) }
-#define RPC_DEBUG_C(msg) if(frrpc::IsOpenLog()){ K_DEBUG_C(LOG_KEY, msg) }
+#define RPC_DEBUG_P(msg, arg...) if(frrpc::IsOpenLog()){ K_DEBUG_P(LOG_KEY, msg, ##arg) }
+#define RPC_DEBUG_D(msg, arg...) if(frrpc::IsOpenLog()){ K_DEBUG_D(LOG_KEY, msg, ##arg) }
+#define RPC_DEBUG_I(msg, arg...) if(frrpc::IsOpenLog()){ K_DEBUG_I(LOG_KEY, msg, ##arg) }
+#define RPC_DEBUG_W(msg, arg...) if(frrpc::IsOpenLog()){ K_DEBUG_W(LOG_KEY, msg, ##arg) }
+#define RPC_DEBUG_E(msg, arg...) if(frrpc::IsOpenLog()){ K_DEBUG_E(LOG_KEY, msg, ##arg) }
+#define RPC_DEBUG_C(msg, arg...) if(frrpc::IsOpenLog()){ K_DEBUG_C(LOG_KEY, msg, ##arg) }
 
 #endif 
 

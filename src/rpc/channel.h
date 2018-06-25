@@ -16,16 +16,13 @@
 
 #include <google/protobuf/service.h>
 #include "pb/net.pb.h"
-#include "rpc_base_net.h"
-#include "net_channel.h"
-#include "controller.h"
-
-#include "frrpc_define.h"
-#include "frrpc_function.h"
+#include "rpc/net_channel.h"
+#include "rpc/controller.h"
+#include "rpc/frrpc_define.h"
+#include "rpc/frrpc_function.h"
 
 namespace frrpc{
 
-// class ChannelOption {{{1
 class ChannelOption{
 	public:
 		ChannelOption(): compress_type(eCompressType_Not) { ; }
@@ -33,17 +30,15 @@ class ChannelOption{
 	public:
 		eCompressType compress_type;
 };
-// }}}1
 
-// class RegisterCallBack {{{1
+
 class RegisterCallBack{
 	public:
 		RegisterCallBack(google::protobuf::Closure* _callback, google::protobuf::Message* _response): callback(_callback), response(_response) { }
 		RegisterCallBack(const RegisterCallBack& ref){ this->callback = ref.callback; this->response = ref.response; }
 		RegisterCallBack& operator=(const RegisterCallBack& ref){ this->callback = ref.callback; this->response = ref.response; return *this; }
 		~RegisterCallBack(){ 
-//			DELETE_POINT_IF_NOT_NULL(callback); 
-//			DELETE_POINT_IF_NOT_NULL(response); 
+			release();
 		}
 	public:
 		void release(){
@@ -55,9 +50,8 @@ class RegisterCallBack{
 		google::protobuf::Closure* callback;
 		google::protobuf::Message* response;
 };
-// }}}1
 
-// class RequestCallBack {{{1
+
 class RequestCallBack{
 	public:
 		RequestCallBack(google::protobuf::Closure* _callback, google::protobuf::Message* _request): callback(_callback), response(_request) {;}
@@ -65,13 +59,16 @@ class RequestCallBack{
 		RequestCallBack& operator=(const RequestCallBack& ref){ this->callback = ref.callback; this->response = ref.response; return *this; }
 		~RequestCallBack()=default;
 	public:
+		void release(){
+			DELETE_POINT_IF_NOT_NULL(callback); 
+			DELETE_POINT_IF_NOT_NULL(response); 
+		}
+	public:
 		google::protobuf::Closure* callback;
 		google::protobuf::Message* response;
 };
 
-// }}}1
 
-// Class Channel {{{1
 // Abstract interface for an RPC channel.  An RpcChannel represents a
 // communication line to a Service which can be used to call that Service's
 // methods.  The Service may be running on another machine.  Normally, you
@@ -111,14 +108,14 @@ class Channel : public google::protobuf::RpcChannel {
 	public:
 		// start channle by different link.
 		bool StartServer(const std::string& ip, Port port);
-		bool StartGate(const std::string& ip, Port port);
+		bool StartRoute(const std::string& ip, Port port);
 		bool StartMQ();
 
 		void Stop();
 
 		// Is you want receive network event. You need register a callback.
 		// Event does not include method of rpc.
-		inline void RegisterNetEvent(std::function<void(const Controller* cntl)> net_event_cb){ net_event_cb_ = net_event_cb; }
+		inline void RegisterNetEvent(std::function<void(const network::eNetEvent& event)> net_event_cb){ net_event_cb_ = net_event_cb; }
 
 		// Call the given method of the remote service.  The signature of this
 		// procedure looks the same as Service::CallMethod(), but the requirements
@@ -160,11 +157,10 @@ class Channel : public google::protobuf::RpcChannel {
 		std::map<std::string, RegisterCallBack> register_callback_;
 		ChannelOption option_;
 		std::atomic<RpcRequestId> request_id_;
-		std::function<void(const Controller* cntl)> net_event_cb_;
+		std::function<void(const network::eNetEvent& event)> net_event_cb_;
 };
-// }}}1
 
-// template function list : RegisterRpcMethod {{{2
+// template function list : RegisterRpcMethod
 // Zero
 inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void (*function)(google::protobuf::Message*)){
 	const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
@@ -323,10 +319,6 @@ inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub,
 	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9));
 }
-
-// }}}2
-
-// }}}1
 
 } //namespace frrpc
 

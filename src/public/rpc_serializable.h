@@ -14,9 +14,7 @@
 #include "pb/frrpc.pb.h"
 #include "public_define.h"
 
-namespace frrpc{//{{{1
-
-// class RpcPacket{{{2
+namespace frrpc{
 
 class RpcPacket{
 	public:
@@ -63,7 +61,7 @@ class RpcPacket{
 		frpublic::BinaryMemoryPtr binary;
 };
 typedef std::shared_ptr<RpcPacket> RpcPacketPtr;
-// }}}2
+
 
 // packet struct : net_size(2) + net_info + meta_size(2) + meta_size + binary
 //
@@ -74,7 +72,7 @@ frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const network::NetInfo& net_inf
 // notice : packet has many variables. It only set net_event, rpc_meta and binary.
 bool GetMessageFromBinary(const frpublic::BinaryMemory& binary, int32_t offset, network::NetInfo& net_info, RpcPacketPtr& packet);
 
-}//}}}1
+}
 
 #endif 
 

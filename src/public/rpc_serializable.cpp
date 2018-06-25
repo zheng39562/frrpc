@@ -12,9 +12,9 @@ using namespace frrpc::network;
 using namespace frpublic;
 using namespace google::protobuf;
 
-namespace frrpc{//{{{1
+namespace frrpc{
 
-BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info){// {{{2
+BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info){
 	BinaryMemoryPtr binary(new BinaryMemory());
 	if(binary != NULL){
 		NetInfoSize net_info_size(net_info.ByteSize());
@@ -36,9 +36,9 @@ BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info){// {{{2
 
 	}
 	return binary;
-}// }}}2
+}
 
-BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& meta, const Message& body){// {{{2
+BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& meta, const Message& body){
 	BinaryMemoryPtr binary(new BinaryMemory());
 	if(binary != NULL){
 		NetInfoSize net_info_size(net_info.ByteSize());
@@ -65,20 +65,14 @@ BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& m
 				DEBUG_E("Fail to serialize body.");
 				return NULL;
 			}
-
-			DEBUG_P("size " << binary->size()
-				<< " packet binary [" << binary->to_hex(0, sizeof(PacketSize)) << "][" << packet_size << "]"
-				<< " net binary [" << binary->to_hex(sizeof(PacketSize) + sizeof(NetInfoSize), net_info_size) << "][" << net_info_size << "]"
-				<< " meta binary [" << binary->to_hex(sizeof(PacketSize) + sizeof(NetInfoSize) + net_info_size + sizeof(RpcMetaSize), rpc_meta_size) << "][" << rpc_meta_size << "]"
-				<< " body binary [" << binary->to_hex(sizeof(PacketSize) + sizeof(NetInfoSize) + net_info_size + sizeof(RpcMetaSize) + rpc_meta_size, body.ByteSize()) << "][" << body.ByteSize() << "]");
 		}
 		else{ DEBUG_E("Fail to new buffer "); }
 	}
 
 	return binary;
-}// }}}2
+}
 
-bool GetMessageFromBinary(const BinaryMemory& binary, int offset, NetInfo& net_info, RpcPacketPtr& packet){// {{{2
+bool GetMessageFromBinary(const BinaryMemory& binary, int offset, NetInfo& net_info, RpcPacketPtr& packet){
 	PacketSize packet_size = *(PacketSize*)binary.buffer(offset);
 	uint32_t cur_offset(sizeof(PacketSize) + offset);
 
@@ -110,11 +104,6 @@ bool GetMessageFromBinary(const BinaryMemory& binary, int offset, NetInfo& net_i
 
 			RpcBodySize body_size = packet_size - sizeof(NetInfoSize) - net_size - sizeof(RpcMetaSize) - meta_size;
 			if(body_size > 0){
-				DEBUG_P("size " << binary.size()
-					<< " packet binary [" << binary.to_hex(offset, sizeof(PacketSize)) << "][" << packet_size << "]"
-					<< " net binary [" << binary.to_hex(offset + sizeof(PacketSize) + sizeof(NetInfoSize), net_size) << "][" << net_size << "]"
-					<< " meta binary [" << binary.to_hex(offset + sizeof(PacketSize) + sizeof(NetInfoSize) + net_size + sizeof(RpcMetaSize), meta_size) << "][" << meta_size << "]"
-					<< " body binary [" << binary.to_hex(offset + sizeof(PacketSize) + sizeof(NetInfoSize) + net_size + sizeof(RpcMetaSize) + meta_size, body_size) << "][" << body_size << "]");
 				packet->binary = BinaryMemoryPtr(new BinaryMemory());
 				packet->binary->add(binary.buffer(cur_offset), body_size);
 				if(packet->binary == NULL){
@@ -130,7 +119,7 @@ bool GetMessageFromBinary(const BinaryMemory& binary, int offset, NetInfo& net_i
 	}
 
 	return true;
-}// }}}2
+}
 
-}//}}}1
+}
 

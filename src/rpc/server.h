@@ -11,19 +11,12 @@
 
 #include <thread>
 #include <functional>
-
-#include "frtemplate/lock_queue.hpp"
 #include "frpublic/pub_memory.h"
-#include "frpublic/pub_tool.h"
-#include "closure.h"
 #include "net_server.h"
-
 #include "frrpc_function.h"
-#include "rpc_base_net.h"
 
 namespace frrpc{
 
-// class ServerOption{{{1
 class ServerOption{
 	public:
 		// Default : single thread and gate module.
@@ -36,10 +29,9 @@ class ServerOption{
 		size_t work_thread_num;
 		std::string service_addr;
 };
-// }}}1
 
 
-// class RpcMessage{{{1
+// class RpcMessage
 // Rpc Message is used to CallMethod.
 class RpcMessage{
 	public:
@@ -64,10 +56,7 @@ class RpcMessage{
 
 std::shared_ptr<RpcMessage> RpcMessagePtr;
 
-// }}}1
 
-
-// class Server {{{1
 class Server{
 	public:
 		Server(ServerOption& option);
@@ -76,7 +65,7 @@ class Server{
 		bool AddService(::google::protobuf::Service* service);
 
 		bool StartServer(const std::string& ip, Port port);
-		bool StartGate(const std::vector<std::tuple<std::string, Port> >& gate_list);
+		bool StartRoute(const std::vector<std::tuple<std::string, Port> >& gate_list);
 		bool StartMQ(const std::vector<std::tuple<const std::string&, Port> >& mq_list);
 
 		bool Stop();
@@ -85,7 +74,7 @@ class Server{
 
 		// Is you want receive network event. You need register a callback.
 		// Event does not include method of rpc.
-		inline void RegisterNetEvent(std::function<void(const Controller* cntl)> net_event_cb){ net_event_cb_ = net_event_cb; }
+		inline void RegisterNetEvent(std::function<void(LinkID link_id, const network::eNetEvent& event)> net_event_cb){ net_event_cb_ = net_event_cb; }
 
 		bool SendRpcMessage(frrpc::Controller* cntl, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
 	private:
@@ -103,9 +92,8 @@ class Server{
 		std::map<std::string, ::google::protobuf::Service*> name_2service_;
 		std::vector<std::thread> work_threads_;
 		eCompressType compress_type_; 
-		std::function<void(const Controller* cntl)> net_event_cb_;
+		std::function<void(LinkID link_id, const network::eNetEvent& event)> net_event_cb_;
 };
-// Server }}}1
 
 }// namespace frrpc{
 
