@@ -18,7 +18,7 @@ using namespace frrpc::network;
 namespace frrpc{
 
 Server::Server(ServerOption& option)
-	:rpc_net_(NULL),
+	:rpc_net_server_(NULL),
 	 option_(option),
 	 name_2service_(),
 	 work_threads_(),
@@ -34,15 +34,30 @@ bool Server::AddService(::google::protobuf::Service* service){
 	string service_name = service->GetDescriptor()->name();
 	if(name_2service_.find(service_name) == name_2service_.end()){
 		name_2service_.insert(make_pair(service_name, service));
-		return rpc_net_->RegisterService(service_name, option_.service_addr);
+		return rpc_net_server_->RegisterService(service_name, option_.service_addr);
 	}
 	return false;
 }
 
+bool Server::StartServer(const std::string& ip, Port port){
+	DELETE_POINT_IF_NOT_NULL(rpc_net_server_);
+	rpc_net_server_ = new RpcServer_Server(ip, port);
+	if(!rpc_net_server_->Start()){
+		RPC_DEBUG_E("Fail to start server.");
+		return false;
+	}
+
+	if(!InitThreads(option_)){
+		RPC_DEBUG_E("Call Init is Failed.");
+		return false;
+	}
+	return true;
+}
+
 bool Server::StartRoute(const vector<tuple<std::string, Port> >& gate_list){
-	DELETE_POINT_IF_NOT_NULL(rpc_net_);
-	rpc_net_ = new RpcServer_Route(gate_list);
-	if(!rpc_net_->Start()){
+	DELETE_POINT_IF_NOT_NULL(rpc_net_server_);
+	rpc_net_server_ = new RpcServer_Route(gate_list);
+	if(!rpc_net_server_->Start()){
 		RPC_DEBUG_E("Fail to start server.");
 		return false;
 	}
@@ -59,7 +74,7 @@ bool Server::StartMQ(const vector<tuple<const std::string&, Port> >& mq_list){
 }
 
 bool Server::Stop(){ 
-	DELETE_POINT_IF_NOT_NULL(rpc_net_);
+	DELETE_POINT_IF_NOT_NULL(rpc_net_server_);
 
 	for(auto& thread_item : work_threads_){
 		if(thread_item.joinable()){
@@ -77,7 +92,7 @@ bool Server::RunUntilQuit(){
 	return Stop();
 }
 
-bool Server::SendRpcMessage(LinkID link_id, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response){
+bool Server::SendRpcMessage(frrpc::Controller* cntl, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response){ 
 	Service* service = GetServiceFromName(service_name);
 	if(service == NULL){ RPC_DEBUG_E("Can not find service[%s]. Do you load this service?", service_name.c_str()); return false; }
 
@@ -87,30 +102,8 @@ bool Server::SendRpcMessage(LinkID link_id, const std::string& service_name, con
 	rpc_meta.mutable_rpc_request_meta()->set_request_id(RPC_REQUEST_ID_NULL);
 	rpc_meta.set_compress_type(compress_type_);
 
-	if(!rpc_net_->Send(link_id, rpc_meta, response)){
-		RPC_DEBUG_E("Fail to send message. link id [%d]", link_id);
-		return false;
-	}
-
-	return true;
-} 
-
-bool Server::SendRpcMessage(std::vector<LinkID> link_ids, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response){
-	Service* service = GetServiceFromName(service_name);
-	if(service == NULL){ RPC_DEBUG_E("Can not find service[%s]. Do you load this service?", service_name.c_str()); return false; }
-
-	RpcMeta rpc_meta;
-	rpc_meta.set_service_name(service_name);
-	rpc_meta.set_method_index(service->GetDescriptor()->FindMethodByName(method_name)->index());
-	rpc_meta.mutable_rpc_request_meta()->set_request_id(RPC_REQUEST_ID_NULL);
-	rpc_meta.set_compress_type(compress_type_);
-
-	if(!rpc_net_->Send(link_ids, rpc_meta, response)){
-		string str_link_ids;
-		for(LinkID link_id : link_ids){
-			str_link_ids = to_string(link_id) + ",";
-		}
-		RPC_DEBUG_E("Fail to send message. cntl info [%s]", str_link_ids.c_str());
+	if(!rpc_net_server_->Send(cntl, rpc_meta, response)){
+		RPC_DEBUG_E("Fail to send message. cntl info [%s]", cntl->info().c_str());
 		return false;
 	}
 
@@ -123,6 +116,8 @@ bool Server::InitThreads(ServerOption& option){
 		work_threads_.push_back(thread(
 			[&](){
 				Controller* cntl = new Controller();
+				cntl->set_service_addr(option_.service_addr);
+
 				RpcMessage* rpc_message = new RpcMessage();
 
 				Closure* done = frrpc::NewPermanentCallback(this, &Server::ReleaseRpcResource, cntl, rpc_message);
@@ -136,7 +131,7 @@ bool Server::InitThreads(ServerOption& option){
 
 				queue<RpcPacketPtr> packet_queue;
 				while(!IsAskedToQuit()){
-					rpc_net_->FetchMessageQueue(packet_queue, 50);
+					rpc_net_server_->FetchMessageQueue(packet_queue, 50);
 
 					if(packet_queue.empty()){
 						FrSleep(1);
@@ -148,6 +143,7 @@ bool Server::InitThreads(ServerOption& option){
 						packet_queue.pop();
 
 						cntl->set_link(package->link_id);
+
 						if(package->net_event == eNetEvent_Method){
 							google::protobuf::Service* cur_service(NULL);
 							if(ParseBinary(package, *rpc_message, &cur_service)){
@@ -159,6 +155,7 @@ bool Server::InitThreads(ServerOption& option){
 							}
 						}
 						else{
+							RPC_DEBUG_P("Call net event function. cntl info : %s", cntl->info().c_str());
 							if(net_event_cb_ != NULL){
 								net_event_cb_(package->link_id, package->net_event);
 							}
@@ -184,7 +181,7 @@ bool Server::InitThreads(ServerOption& option){
 }
 
 void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){ 
-	if(rpc_net_ == NULL){ RPC_DEBUG_E("link is null."); return; }
+	if(rpc_net_server_ == NULL){ RPC_DEBUG_E("link is null."); return; }
 	if(rpc_message == NULL){ RPC_DEBUG_E("point of message is null."); return; }
 	if(cntl->link_id() == RPC_LINK_ID_NULL){ RPC_DEBUG_E("link is is zero. Can not send data."); return; }
 
@@ -193,7 +190,7 @@ void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){
 		return;
 	}
 
-	if(!rpc_net_->Send(cntl->link_id(), rpc_message->rpc_meta, *(rpc_message->response))){
+	if(!rpc_net_server_->Send(cntl, rpc_message->rpc_meta, *(rpc_message->response))){
 		RPC_DEBUG_E("Fail to send message.");
 		return;
 	}

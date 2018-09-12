@@ -27,15 +27,13 @@ class EchoServiceImpl : public example::EchoService{
 				DEBUG_E("echo controller is null(Fail to Convert RpcController to frrpc::Controller).");
 			}
 
-			DEBUG_D("Receive msg [" << request->msg() << "]");
+			DEBUG_D("Receive msg [%s]", request->msg().c_str());
 
 			response->set_msg("hello client.");
 
-			frrpc::Controller cntl;
-			cntl.set_link(echo_cntl->link_id());
 			bool ret(true);
-			ret &= server_->SendRpcMessage(&cntl, "EchoService", "RegisterEcho", *response);
-			ret &= server_->SendRpcMessage(&cntl, "EchoService", "RegisterClassEcho", *response);
+			ret &= server_->SendRpcMessage(echo_cntl->link_id(), "EchoService", "RegisterEcho", *response);
+			ret &= server_->SendRpcMessage(echo_cntl->link_id(), "EchoService", "RegisterClassEcho", *response);
 			if(!ret){
 				DEBUG_E("SendRpcMessage has error.");
 			}
@@ -50,30 +48,27 @@ int main(int argc, char* argv[]){
 	frrpc::OpenLog("./log", frpublic::eLogLevel_Program);
 	frpublic::SingleLogServer::GetInstance()->set_default_log_key("server");
 
-	if(argc != 4){
+	if(argc < 3 || argc > 5){
 		DEBUG_E("parameter size is wrong.");
 		return -1;
 	}
 
-	string connect_option = string(argv[1]);
-	g_ip_ = string(argv[2]);
-	g_port_ = stoi(string(argv[3]));
+	g_ip_ = string(argv[1]);
+	g_port_ = stoi(string(argv[2]));
+	string service_addr = "";
+	if(argc == 4){
+		service_addr = string(argv[3]);
+	}
 
-	DEBUG_D("Network option : [" << connect_option << "][" << g_ip_ << "][" << g_port_ << "]");
+	DEBUG_D("Network option : [%s:%d]", g_ip_.c_str(), g_port_);
 
 	frrpc::ServerOption option;
+	option.work_thread_num = 2;
+	option.service_addr = service_addr;
 	frrpc::Server server(option);
-	if("Route" == connect_option || connect_option == "route"){
-		if(!server.StartRoute({ tuple<string, Port>(g_ip_, g_port_) })){
-			DEBUG_E("Fail to start server.");
-			return -1;
-		}
-	}
-	else{
-		if(!server.StartServer(g_ip_, g_port_)){
-			DEBUG_E("Fail to start server.");
-			return -1;
-		}
+	if(!server.StartRoute({ tuple<string, Port>(g_ip_, g_port_) })){
+		DEBUG_E("Fail to start server.");
+		return -1;
 	}
 
 	EchoServiceImpl* service = new EchoServiceImpl(&server);

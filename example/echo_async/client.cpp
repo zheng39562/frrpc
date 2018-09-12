@@ -35,7 +35,7 @@ bool g_wait_rsp_register_echo(false);
 bool g_wait_rsp_register_class_echo(false);
 
 void OnEcho(example::response* rsp, frrpc::Controller* ctnl){
-	DEBUG_D("Receive response [" << rsp->msg() << "]");;
+	DEBUG_D("Receive response [%s]", rsp->msg().c_str());
 
 	// this point of object is you created.So you must delete it.
 	DELETE_POINT_IF_NOT_NULL(rsp);
@@ -45,7 +45,7 @@ void OnEcho(example::response* rsp, frrpc::Controller* ctnl){
 
 void OnRegisterEcho(google::protobuf::Message* response, frrpc::Controller* ctnl){
 	example::response* rsp = dynamic_cast<example::response*>(response);
-	DEBUG_D("Receive response [" << rsp->msg() << "]");;
+	DEBUG_D("Receive response [%s]", rsp->msg().c_str());
 
 	g_wait_rsp_register_echo = false;
 }
@@ -54,7 +54,7 @@ class EchoClass{
 	public:
 		void OnRegisterClassEcho(google::protobuf::Message* response, frrpc::Controller* ctnl){
 			example::response* rsp = dynamic_cast<example::response*>(response);
-			DEBUG_D("Receive response [" << rsp->msg() << "]");
+			DEBUG_D("Receive response [%s]", rsp->msg().c_str());
 			g_wait_rsp_register_class_echo = false;
 		}
 };
@@ -74,36 +74,30 @@ void WaitAllRsp(frrpc::Channel& channel){
 int main(int argc, char* argv[]){
 	frrpc::OpenLog("./log", frpublic::eLogLevel_Program);
 	frpublic::SingleLogServer::GetInstance()->set_default_log_key("client");
-	if(argc != 4){
+	if(argc < 3 || argc > 5){
 		DEBUG_D("argc is wrong. [server_option] [ip] [port]");
 		return -1;
 	}
-	string connect_option = string(argv[1]);
-	g_ip_ = string(argv[2]);
-	g_port_ = stoi(string(argv[3]));
 
-	DEBUG_D("Client option : [" << connect_option << "][" << g_ip_ << "][" << g_port_ << "]");
+	g_ip_ = string(argv[1]);
+	g_port_ = stoi(string(argv[2]));
+	string service_addr = "";
+	if(argc == 4){
+		service_addr = string(argv[3]);
+	}
+
+	DEBUG_D("Client option : [%s:%d]", g_ip_.c_str(), g_port_);
 
 	frrpc::ChannelOption channel_option;
 	frrpc::Channel channel(channel_option);
-	if("Route" == connect_option || connect_option == "Route"){
-		// connect route.
-		// you must launch route.
-		if(!channel.StartRoute(g_ip_, g_port_)) {
-			DEBUG_E("Fail to start route.");
-			return -1;
-		}
-	}
-	else{
-		// connect server.
-		if(!channel.StartServer(g_ip_, g_port_)) {
-			DEBUG_E("Fail to start server.");
-			return -1;
-		}
+	if(!channel.StartRoute(g_ip_, g_port_)) {
+		DEBUG_E("Fail to start route.");
+		return -1;
 	}
 
 	frrpc::Controller* cntl = new frrpc::Controller();
 	example::EchoService_Stub stub(&channel);
+	channel.RegisterService(&stub, service_addr);
 
 	// register request method.
 	DEBUG_D("Register Echo.");

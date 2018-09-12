@@ -37,12 +37,15 @@ class RegisterCallBack{
 		RegisterCallBack(google::protobuf::Closure* _callback, google::protobuf::Message* _response): callback(_callback), response(_response) { }
 		RegisterCallBack(const RegisterCallBack& ref){ this->callback = ref.callback; this->response = ref.response; }
 		RegisterCallBack& operator=(const RegisterCallBack& ref){ this->callback = ref.callback; this->response = ref.response; return *this; }
-		~RegisterCallBack()=default;
+		~RegisterCallBack(){ 
+			release();
+		}
 	public:
 		void release(){
 			DELETE_POINT_IF_NOT_NULL(callback); 
 			DELETE_POINT_IF_NOT_NULL(response); 
 		}
+
 	public:
 		google::protobuf::Closure* callback;
 		google::protobuf::Message* response;
@@ -103,6 +106,8 @@ class Channel : public google::protobuf::RpcChannel {
 		Channel(const ChannelOption& option);
 		virtual ~Channel();
 	public:
+		// start channle by different link.
+		bool StartServer(const std::string& ip, Port port);
 		bool StartRoute(const std::string& ip, Port port);
 		bool StartMQ();
 
@@ -132,7 +137,7 @@ class Channel : public google::protobuf::RpcChannel {
 
 		// bind service addr.
 		// default is empty string. route choose any service to send.
-		bool RegisterService(::google::protobuf::Service* service, const std::string& service_addr);
+		void SetServiceAddr(const ::google::protobuf::Service* service, const std::string& service_addr);
 
 		// Clear All Setting
 		//	* Disconnect.
@@ -151,7 +156,7 @@ class Channel : public google::protobuf::RpcChannel {
 		inline bool IsRequestMode(const frrpc::RpcPacketPtr& package){ return package->rpc_meta.rpc_request_meta().request_id() != RPC_REQUEST_ID_NULL; }
 	private:
 		bool init_success_;
-		frrpc::network::RpcNetChannel* rpc_net_;
+		frrpc::network::RpcBaseNet* rpc_net_;
 		std::map<RpcRequestId, RequestCallBack> request_callback_;
 		std::map<std::string, RegisterCallBack> register_callback_;
 		ChannelOption option_;

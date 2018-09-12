@@ -39,6 +39,13 @@ Channel::~Channel(){
 	}
 }
 
+bool Channel::StartServer(const std::string& ip, Port port){
+	DELETE_POINT_IF_NOT_NULL(rpc_net_);
+	rpc_net_ = new RpcChannel_Server(ip, port);
+	init_success_ = rpc_net_ != NULL && rpc_net_->Start();
+	return init_success_;
+}
+
 bool Channel::StartRoute(const std::string& ip, Port port){
 	DELETE_POINT_IF_NOT_NULL(rpc_net_);
 	rpc_net_ = new RpcChannel_Route(ip, port);
@@ -52,21 +59,21 @@ bool Channel::StartMQ(){
 }
 
 void Channel::Stop(){
-	if(init_success_){
-		RPC_DEBUG_I("Stop channel.");
+	RPC_DEBUG_I("Stop channel.");
 
-		init_success_ = false;
-
-		if(rpc_net_ != NULL){
-			rpc_net_->Stop();
-			DELETE_POINT_IF_NOT_NULL(rpc_net_);
-		}
-	}
+	init_success_ = false;
+	rpc_net_->Stop();
+	DELETE_POINT_IF_NOT_NULL(rpc_net_);
 }
 
 
 void Channel::CallMethod(const MethodDescriptor* method, RpcController* controller, const Message* request, Message* response, Closure* done){
 	if(!init_success_){ RPC_DEBUG_E("Initialization is failed. Please check and new again."); return; }
+
+	frrpc::Controller* cntl = dynamic_cast<frrpc::Controller*>(controller);
+	if(cntl == NULL){
+		RPC_DEBUG_E("Fail to convert cntl point. contrller is wrong."); return ;
+	}
 
 	RpcRequestId request_id(++request_id_);
 	if(request_callback_.find(request_id) != request_callback_.end()){
@@ -80,7 +87,9 @@ void Channel::CallMethod(const MethodDescriptor* method, RpcController* controll
 	rpc_meta.mutable_rpc_request_meta()->set_request_id(request_id);
 	rpc_meta.set_compress_type(option_.compress_type);
 
-	if(!rpc_net_->Send(rpc_meta, *request)){
+	method.service()->name();
+
+	if(!rpc_net_->Send(cntl, rpc_meta, *request)){
 		RPC_DEBUG_E("Fail to send request."); return ;
 	}
 }
@@ -89,7 +98,7 @@ void Channel::RegisterCallback(const MethodDescriptor* method, google::protobuf:
 	if(!init_success_){ RPC_DEBUG_E("Initialization is failed. Please check and new again."); return; }
 	if(method == NULL || response == NULL || permanet_callback == NULL){ RPC_DEBUG_E("Not allow parameter is null."); return; }
 
-	string callback_key = ConvertMethodKey(method->service()->name(), method->index());
+	string callback_key = method->service()->name() + "." + to_string(method->index());
 	if(register_callback_.find(callback_key) != register_callback_.end()){
 		if(!ClearCallback(callback_key)){
 			RPC_DEBUG_E("service [%s] method [%s] is exist.And fail to clear.", method->service()->name().c_str(), method->name().c_str());
@@ -155,16 +164,11 @@ void Channel::RunCallback(uint32_t run_cb_times){
 	}
 }
 
-bool Channel::RegisterService(::google::protobuf::Service* service, const std::string& service_addr){
-	return rpc_net_->RegisterService(service->GetDescriptor()->name(), service_addr);
-}
-
 void Channel::ClearAllSetting(){
 	Stop();
 	request_callback_.clear();
 	register_callback_.clear();
 }
-
 
 bool Channel::ClearCallback(const std::string& callback_key){
 	auto default_callback_iter = register_callback_.find(callback_key);

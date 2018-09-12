@@ -16,12 +16,15 @@ using namespace frrpc::network;
 namespace frrpc{
 
 Controller::Controller()
-	:link_id_(RPC_LINK_ID_NULL)
+	:link_ids_(NULL),
+	 service_addr_(NULL)
 {
 	;
 }
 
 Controller::~Controller(){
+	DELETE_POINT_IF_NOT_NULL(link_ids_);
+	DELETE_POINT_IF_NOT_NULL(service_addr_);
 }
 
 void Controller::Reset(){

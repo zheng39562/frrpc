@@ -13,8 +13,10 @@ PROJECT_OBJECTS= \
 	./$(OUTPUT_TEMPORARY_PATH)/../rpc/controller.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../rpc/frrpc_function.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../rpc/frrpc_log.o \
-	./$(OUTPUT_TEMPORARY_PATH)/../rpc/net_channel.o \
-	./$(OUTPUT_TEMPORARY_PATH)/../rpc/net_server.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../rpc/net_channel_server.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../rpc/net_channel_route.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../rpc/net_server_server.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../rpc/net_server_route.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../rpc/rpc_base_net.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../rpc/server.o
 

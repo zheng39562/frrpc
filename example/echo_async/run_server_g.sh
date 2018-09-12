@@ -1,4 +1,4 @@
 #! /bin/bash
 
-./server Route "127.0.0.1" 12345 
+./server "127.0.0.1" 12345 addr1
 

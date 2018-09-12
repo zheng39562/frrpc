@@ -18,6 +18,54 @@
 namespace frrpc{
 namespace network{
 
+class RpcServer_Server : public RpcNetServer, public frnet::NetListen{
+	public:
+		RpcServer_Server(const std::string &ip, Port port);
+		RpcServer_Server(const RpcServer_Server &ref)=delete;
+		RpcServer_Server& operator=(const RpcServer_Server &ref)=delete;
+		virtual ~RpcServer_Server();
+
+	public:
+		virtual bool Start();
+		virtual bool Stop();
+
+		// disconnect is link_id
+		virtual bool Disconnect(LinkID link_id);
+
+		virtual bool Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body);
+
+		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr);
+
+	protected:
+		// param[out] read_size : 
+		//	delete date size when function finish. Set 0 If you do not want delete any data.
+		//
+		// retval : close client if return is false.
+		virtual bool OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, size_t& read_size);
+
+		virtual void OnConnect(Socket sockfd);
+		virtual void OnDisconnect(Socket sockfd);
+
+		virtual void OnClose();
+
+		// include all error : read, write, disconnect and so on.
+		virtual void OnError(const frnet::NetError& net_error);
+
+	private:
+		// * Is socket always positive? 
+		inline LinkID BuildLinkID(Socket socket)const { return (LinkID)socket; }
+		inline Socket GetSocket(LinkID link_id)const { return (Socket)link_id; }
+
+		bool ReturnError(Socket socket, const std::string& error_info);
+	private:
+		frnet::NetServer* server_;
+		std::string ip_;
+		Port port_;
+		NetInfo net_info_;
+		RpcHeart rpc_heart_;
+};
+
+
 class RpcServer_Route;
 class RpcServer_Route_Client : public frnet::NetListen{
 	public:
@@ -33,8 +81,7 @@ class RpcServer_Route_Client : public frnet::NetListen{
 		inline Port port()const{ return port_; }
 		inline RouteID route_id()const{ return route_id_; }
 
-		bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
-		bool Send(std::vector<LinkID> link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
+		bool Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body);
 
 		bool RegisterService(const std::string& service_name, const std::string& service_addr);
 	protected:
@@ -59,8 +106,6 @@ class RpcServer_Route_Client : public frnet::NetListen{
 
 		bool PerformRouteCmd(frrpc::network::NetInfo& net_info);
 		bool ReceiveEventNotice(frrpc::route::RouteResponse route_response);
-
-		bool Send(frrpc::route::RouteNetInfo* route_net_info, const RpcMeta& meta, const google::protobuf::Message& body);
 	private:
 		frnet::NetClient* net_client_;
 		RouteID route_id_;
@@ -88,8 +133,7 @@ class RpcServer_Route : public RpcNetServer{
 		
 		virtual bool Disconnect(LinkID link_id);
 
-		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
-		virtual bool Send(std::vector<LinkID> link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
+		virtual bool Send(Controller* cntl, const RpcMeta& meta, const google::protobuf::Message& body);
 
 		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr);
 

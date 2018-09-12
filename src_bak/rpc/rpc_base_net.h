@@ -39,12 +39,9 @@ class RpcBaseNet{
 		// disconnect is link_id
 		virtual bool Disconnect(LinkID link_id)=0;
 
-		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr)=0;
-
 		void FetchMessageQueue(std::queue<RpcPacketPtr>& packet_queue, int32_t max_queue_size);
 
 		void PushMessageToQueue(const RpcPacketPtr& packet);
-
 	protected:
 		bool GetAndCheckPacketSize(const void* buffer, PacketSize& size);
 	private:
@@ -56,8 +53,9 @@ class RpcNetServer : public RpcBaseNet{
 		RpcNetServer()=default;
 		virtual ~RpcNetServer()=default;
 	public:
-		virtual bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body)=0;
-		virtual bool Send(std::vector<LinkID> link_ids, const RpcMeta& meta, const google::protobuf::Message& body)=0;
+		virtual bool Send(LinkId link_id, const RpcMeta& meta, const google::protobuf::Message& body)=0;
+
+		virtual bool RegisterService(const std::string& service_name, const std::string& service_addr)=0;
 };
 
 class RpcNetChannel : public RpcBaseNet{
@@ -65,8 +63,7 @@ class RpcNetChannel : public RpcBaseNet{
 		RpcNetChannel()=default;
 		virtual ~RpcNetChannel()=default;
 	public:
-		virtual bool Send(const RpcMeta& meta, const google::protobuf::Message& body)=0;
-
+		virtual bool Send(const std::string service_name, const RpcMeta& meta, const google::protobuf::Message& body)=0;
 };
 
 } // namespace network

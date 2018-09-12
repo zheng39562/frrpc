@@ -23,9 +23,8 @@ std::string GetCommandName(eRouteCmd cmd){
 		case eRouteCmd_EventRegister : return "Command-Event-Register";
 		case eRouteCmd_EventCancel : return "Command-Event-Cancel";
 		case eRouteCmd_EventNotice : return "Command-Event-Notice";
-		case eRouteCmd_Server_ServiceRegister : return "eRouteCmd_Server_ServiceRegister";
-		case eRouteCmd_Server_ServiceCancel : return "eRouteCmd_Server_ServiceCancel";
-		case eRouteCmd_Channel_ServiceRegister : return "eRouteCmd_Channel_ServiceRegister";
+		case eRouteCmd_ServiceRegister : return "Command-Service-Register";
+		case eRouteCmd_ServiceCancel : return "Command-Service-Cancel";
 		default: return "Unkonw Command";
 	}
 }
@@ -147,8 +146,7 @@ bool RpcRoute::OnReceive(Socket sockfd, const frpublic::BinaryMemory& binary, si
 			DEBUG_E("Fail to parse binary. net info socket [%d] cur_offset [%d] binary size [%d] binary [%s]", sockfd, cur_offset, binary.size(), binary.to_hex().c_str()); return false;
 		}
 
-		string type_name = frrpc::network::eNetType_Name(net_info.net_type());
-		DEBUG_I("receive message from sockfd [%d]. net type[%s] binary [%s]", sockfd, type_name.c_str(), binary.to_hex(cur_offset, size).c_str());
+		DEBUG_I("receive message from sockfd [%d]. net type[%s] binary [%s]", sockfd, frrpc::network::eNetEvent_Name(net_info.net_type()).c_str(), binary.to_hex(cur_offset, size).c_str());
 
 		bool ret(false);
 		switch(net_info.net_type()){
@@ -176,10 +174,6 @@ void RpcRoute::OnDisconnect(Socket sockfd){
 	if(IsServiceSocket(sockfd)){
 		DeleteService(sockfd);
 	}
-	else{
-		//TODO 不成熟 要考虑mutex的问题.
-		channel_service_register_.erase(sockfd);
-	}
 
 	auto DeleteSlefOperator = [](std::map<Socket, std::set<Socket> > a_2b, std::map<Socket, std::set<Socket> > b_2a, Socket a){
 		auto a_2b_iter = a_2b.find(a);
@@ -201,8 +195,6 @@ void RpcRoute::OnDisconnect(Socket sockfd){
 
 	DeleteSlefOperator(event_dis_notice_2listen_, event_dis_listen_2notice_, sockfd);
 	DeleteSlefOperator(event_dis_listen_2notice_, event_dis_notice_2listen_, sockfd);
-
-
 }
 
 void RpcRoute::OnClose(){
@@ -247,7 +239,19 @@ bool RpcRoute::RouteProcess(Socket socket, const frpublic::BinaryMemory& binary,
 			}
 
 			route_net_info.clear_target_sockets();
-			route_net_info.add_target_sockets(GetServerSocket(socket, route_net_info.service_name()));
+			{
+				lock_guard<mutex> local_lock(mutex_service_2info_);
+				auto service_2info_iter = service_2info_.find(route_net_info.service_name());
+				if(service_2info_iter == service_2info_.end()){
+					string service_names;
+					for(auto& service_info_item : service_2info_){
+						service_names += "," + service_info_item.first;
+					}
+					DEBUG_W("Can not find service name [%s] service name list [%s]", route_net_info.service_name().c_str(), service_names.c_str());
+					return true;
+				}
+				route_net_info.add_target_sockets(service_2info_iter->second->GetServiceSocket(route_net_info.service_addr()));
+			}
 
 			send_packet = BuildSendPacket(binary, offset, net_info);
 		}
@@ -255,7 +259,7 @@ bool RpcRoute::RouteProcess(Socket socket, const frpublic::BinaryMemory& binary,
 			PacketSize size = *(PacketSize*)binary.buffer(offset);
 	
 			send_packet = BinaryMemoryPtr(new BinaryMemory());
-			send_packet->add(binary.buffer(offset), sizeof(PacketSize) + size);
+			send_packet.add(binary.buffer(offset), sizeof(PacketSize) + size);
 		}
 
 		for(int index = 0; index < route_net_info.target_sockets_size(); ++index){
@@ -276,10 +280,9 @@ bool RpcRoute::CommandProcess(Socket socket, const frpublic::BinaryMemory& binar
 		switch(route_request.cmd()){
 			case eRouteCmd_EventRegister: return EventRegister(socket, route_request.request_binary());
 			case eRouteCmd_EventCancel: return EventCancel(socket, route_request.request_binary());
+			case eRouteCmd_ServiceRegister: return ServiceRegister(socket, route_request.request_binary());
+			case eRouteCmd_ServiceCancel: return ServiceCancel(socket);
 			case eRouteCmd_EventNotice : DEBUG_W("Command-Event-Notice is not defined.");
-			case eRouteCmd_Server_ServiceRegister: return ServerServiceRegister(socket, route_request.request_binary());
-			case eRouteCmd_Server_ServiceCancel: return ServerServiceCancel(socket);
-			case eRouteCmd_Channel_ServiceRegister: return ChannelServiceRegister(socket, route_request.request_binary());
 			default : DEBUG_E("Unkonw route command [%d]", route_request.cmd()); return false;
 		}
 	}
@@ -351,7 +354,7 @@ bool RpcRoute::EventNoticeDisconnect(Socket socket, const std::string& binary){
 	return true;
 }
 
-bool RpcRoute::ServerServiceRegister(Socket socket, const std::string& binary){
+bool RpcRoute::ServiceRegister(Socket socket, const std::string& binary){
 	RouteServiceInfo route_service_info;
 	if(!route_service_info.ParseFromString(binary)){
 		DEBUG_E("Fail to parse route service info. socket [%d]", socket); return false;
@@ -360,29 +363,8 @@ bool RpcRoute::ServerServiceRegister(Socket socket, const std::string& binary){
 	return AddService(socket, route_service_info.name(), route_service_info.addr());
 }
 
-bool RpcRoute::ServerServiceCancel(Socket socket){
+bool RpcRoute::ServiceCancel(Socket socket){
 	return DeleteService(socket);
-}
-
-bool RpcRoute::ChannelServiceRegister(Socket socket, const std::string& binary){
-	frrpc::route::ChannelServiceRegister service_register;
-	if(!service_register.ParseFromString(binary)){
-		DEBUG_E("Fail to parse service register. socket %d", socket); return false;
-	}
-
-	Socket server_socket = FindServiceSocket(service_register.service_name(), service_register.service_addr());
-	if(server_socket == SOCKET_NULL){
-		DEBUG_E("Can not find server socket. name %s, addr %s", service_register.service_name().c_str(), service_register.service_addr().c_str()); return false;
-	}
-
-	auto channel_service_register_iter = channel_service_register_.find(socket);
-	if(channel_service_register_iter == channel_service_register_.end()){
-		channel_service_register_.insert(make_pair(socket, std::map<ServiceName, Socket>()));
-		channel_service_register_iter = channel_service_register_.find(socket);
-	}
-
-	channel_service_register_iter->second.insert(make_pair(service_register.service_name(), server_socket));
-	return true;
 }
 
 bool RpcRoute::AddService(Socket service_socket, const std::string& service_name, const std::string& service_addr){
@@ -487,31 +469,6 @@ BinaryMemoryPtr RpcRoute::BuildSendPacket(const frpublic::BinaryMemory& binary, 
 
 	return BinaryMemoryPtr();
 }
-
-Socket RpcRoute::FindServiceSocket(const std::string& service_name, const std::string& service_addr){
-	auto service_2info_iter = service_2info_.find(service_name);
-	if(service_2info_iter != service_2info_.end()){
-		return service_2info_iter->second->GetServiceSocket(service_addr);
-	}
-
-	return SOCKET_NULL;
-}
-
-Socket RpcRoute::GetServerSocket(Socket channel_socket, const std::string& service_name){
-	Socket server_socket(SOCKET_NULL);
-
-	std::lock_guard<mutex> local_lock(mutex_service_2info_);
-
-	auto service_name_socket_map_iter = channel_service_register_.find(channel_socket);
-	if(service_name_socket_map_iter != channel_service_register_.end()){
-		auto service_name_socket_iter = service_name_socket_map_iter->second.find(service_name);
-		if(service_name_socket_iter != service_name_socket_map_iter->second.end()){
-			return service_name_socket_iter->second;
-		}
-	}
-	return FindServiceSocket(service_name, "");
-}
-
 
 } // namepsace route
 } // namepsace frrpc

@@ -60,21 +60,6 @@ typedef std::shared_ptr<RouteServiceInfos> RouteServiceInfosPtr;
 class RpcRoute : public frnet::NetListen{
 	private:
 		typedef std::string ServiceName;
-		typedef std::string ServiceAddr;
-
-	private:
-		frnet::NetServer* net_server_;
-		RpcHeart rpc_heart_;
-
-		std::mutex mutex_service_2info_;
-		std::map<ServiceName, RouteServiceInfosPtr> service_2info_;
-		std::map<Socket, ServiceName> service_socket_2name_;
-
-		std::map<Socket, std::map<ServiceName, Socket> > channel_service_register_;
-
-		std::mutex mutex_event_disconnect_;
-		std::map<Socket, std::set<Socket> > event_dis_notice_2listen_; // socket listen socket list
-		std::map<Socket, std::set<Socket> > event_dis_listen_2notice_; // notice list when socket disconnect
 
 	public:
 		RpcRoute();
@@ -116,11 +101,8 @@ class RpcRoute : public frnet::NetListen{
 		bool EventCancel(Socket socket, const std::string& binary);
 		bool EventNoticeDisconnect(Socket socket, const std::string& binary);
 
-		bool ServerServiceRegister(Socket socket, const std::string& binary);
-		bool ServerServiceCancel(Socket socket);
-
-		bool ChannelServiceRegister(Socket socket, const std::string& binary);
-
+		bool ServiceRegister(Socket socket, const std::string& binary);
+		bool ServiceCancel(Socket socket);
 		bool AddService(Socket service_socket, const std::string& service_name, const std::string& service_addr);
 		bool DeleteService(Socket service_socket);
 		inline bool IsServiceSocket(Socket socket)const{ return service_socket_2name_.find(socket) != service_socket_2name_.end(); };
@@ -128,11 +110,17 @@ class RpcRoute : public frnet::NetListen{
 		bool SendEventNotice_Disconnect(Socket disconnect_socket);
 
 		frpublic::BinaryMemoryPtr BuildSendPacket(const frpublic::BinaryMemory& binary, int32_t offset, const frrpc::network::NetInfo& net_info);
+	private:
+		frnet::NetServer* net_server_;
+		RpcHeart rpc_heart_;
 
-		/// @param[in] service_addr random socket when service_addr is empty.
-		Socket FindServiceSocket(const std::string& service_name, const std::string& service_addr);
+		std::mutex mutex_service_2info_;
+		std::map<ServiceName, RouteServiceInfosPtr> service_2info_;
+		std::map<Socket, ServiceName> service_socket_2name_;
 
-		Socket GetServerSocket(Socket channel_socket, const std::string& service_name);
+		std::mutex mutex_event_disconnect_;
+		std::map<Socket, std::set<Socket> > event_dis_notice_2listen_; // socket listen socket list
+		std::map<Socket, std::set<Socket> > event_dis_listen_2notice_; // notice list when socket disconnect
 };
 
 

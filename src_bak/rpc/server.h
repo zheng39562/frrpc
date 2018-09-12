@@ -64,6 +64,7 @@ class Server{
 	public:
 		bool AddService(::google::protobuf::Service* service);
 
+		bool StartServer(const std::string& ip, Port port);
 		bool StartRoute(const std::vector<std::tuple<std::string, Port> >& gate_list);
 		bool StartMQ(const std::vector<std::tuple<const std::string&, Port> >& mq_list);
 
@@ -75,8 +76,7 @@ class Server{
 		// Event does not include method of rpc.
 		inline void RegisterNetEvent(std::function<void(LinkID link_id, const network::eNetEvent& event)> net_event_cb){ net_event_cb_ = net_event_cb; }
 
-		bool SendRpcMessage(LinkID link_id, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
-		bool SendRpcMessage(std::vector<LinkID> link_ids, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
+		bool SendRpcMessage(frrpc::Controller* cntl, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
 	private:
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Server);
 
@@ -87,7 +87,7 @@ class Server{
 		google::protobuf::Service* GetServiceFromName(const std::string& service_name);
 		bool ParseBinary(const frrpc::RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service** service);
 	private:
-		frrpc::network::RpcNetServer* rpc_net_;
+		frrpc::network::RpcNetServer* rpc_net_server_;
 		ServerOption option_;
 		std::map<std::string, ::google::protobuf::Service*> name_2service_;
 		std::vector<std::thread> work_threads_;
