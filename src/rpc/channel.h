@@ -34,16 +34,23 @@ class ChannelOption{
 
 class RegisterCallBack{
 	public:
-		RegisterCallBack(google::protobuf::Closure* _callback, google::protobuf::Message* _response): callback(_callback), response(_response) { }
-		RegisterCallBack(const RegisterCallBack& ref){ this->callback = ref.callback; this->response = ref.response; }
-		RegisterCallBack& operator=(const RegisterCallBack& ref){ this->callback = ref.callback; this->response = ref.response; return *this; }
+		RegisterCallBack(google::protobuf::Closure* _callback, google::protobuf::RpcController* _cntl, google::protobuf::Message* _response)
+			:callback(_callback), cntl(_cntl), response(_response) { }
+		RegisterCallBack(const RegisterCallBack& ref)=delete;
+		RegisterCallBack& operator=(const RegisterCallBack& ref)=delete;
 		~RegisterCallBack()=default;
 	public:
-		void release(){
+		void Clear(){
+			cntl->Reset();
+			response->Clear();
+		}
+		void Release(){
+			DELETE_POINT_IF_NOT_NULL(cntl); 
 			DELETE_POINT_IF_NOT_NULL(callback); 
 			DELETE_POINT_IF_NOT_NULL(response); 
 		}
 	public:
+		google::protobuf::RpcController* cntl;
 		google::protobuf::Closure* callback;
 		google::protobuf::Message* response;
 };
@@ -51,18 +58,18 @@ class RegisterCallBack{
 
 class RequestCallBack{
 	public:
-		RequestCallBack(google::protobuf::Closure* _callback, google::protobuf::Message* _request): callback(_callback), response(_request) {;}
-		RequestCallBack(const RequestCallBack& ref){ this->callback = ref.callback; this->response = ref.response; }
-		RequestCallBack& operator=(const RequestCallBack& ref){ this->callback = ref.callback; this->response = ref.response; return *this; }
-		~RequestCallBack()=default;
-	public:
-		void release(){
-			DELETE_POINT_IF_NOT_NULL(callback); 
+		RequestCallBack(google::protobuf::Closure* _callback, google::protobuf::RpcController* _cntl, google::protobuf::Message* _response)
+			:callback(_callback), cntl(_cntl), response(_response){}
+		RequestCallBack(const RequestCallBack& ref)=delete;
+		RequestCallBack& operator=(const RequestCallBack& ref)=delete;
+		~RequestCallBack(){
+			DELETE_POINT_IF_NOT_NULL(cntl); 
 			DELETE_POINT_IF_NOT_NULL(response); 
 		}
 	public:
-		google::protobuf::Closure* callback;
+		google::protobuf::RpcController* cntl;
 		google::protobuf::Message* response;
+		google::protobuf::Closure* callback;
 };
 
 
@@ -120,19 +127,44 @@ class Channel : public google::protobuf::RpcChannel {
 		// you need free(delete) all pointer if arg is pointer.
 		virtual void CallMethod(const google::protobuf::MethodDescriptor* method, google::protobuf::RpcController* cntl, const google::protobuf::Message* request, google::protobuf::Message* response, google::protobuf::Closure* done);
 
+		// async module.
+		// @return 返回不允许在外面删除，用于来取消这次request。如果已发出，则可以用来取消回调(未实现).
+		google::protobuf::RpcController* SendRequest(google::protobuf::Service* stub, const std::string& method_name, const google::protobuf::Message* request, 
+				void (*function)(google::protobuf::RpcController*, google::protobuf::Message*));
+
+		template <typename Pointer, typename Class>
+		google::protobuf::RpcController* SendRequest(google::protobuf::Service* stub, const std::string& method_name, const google::protobuf::Message* request, 
+				const Pointer& object, void (Class::*method)(google::protobuf::RpcController*, google::protobuf::Message*))
+		{
+			const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+			google::protobuf::RpcController* cntl = new frrpc::Controller();
+			google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
+			google::protobuf::Closure* closure = frrpc::NewCallback(object, method, cntl, response);
+			CallMethod(method_descriptor, cntl, request, response, closure);
+			return cntl;
+		}
+
 		// Register permanet cb function.If Call this twice,last will been used.
 		// You need delete argv by youself except response.
 		//
 		// Attention : response does not deleted in callback.
-		void RegisterCallback(const google::protobuf::MethodDescriptor* method, google::protobuf::Message* response, google::protobuf::Closure* permanet_callback);
-
-		// All callback function will been called.
-		// param[in] run_cb_times : The number of calls to call callbacks.
-		void RunCallback(uint32_t run_cb_times = 20);
+		void RegisterCallback(google::protobuf::Service* stub, const std::string& method_name, void (*function)(google::protobuf::RpcController* ctnl, google::protobuf::Message*));
+		template <typename Pointer, typename Class>
+		void RegisterCallback(google::protobuf::Service* stub, const std::string& method_name, const Pointer& object, void (Class::*method)(google::protobuf::RpcController* ctnl, google::protobuf::Message*)){
+			const google::protobuf::MethodDescriptor* method_descriptor = stub->GetDescriptor()->FindMethodByName(method_name);
+			google::protobuf::RpcController* cntl = new frrpc::Controller();
+			google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
+			google::protobuf::Closure* permanet_callback = frrpc::NewPermanentCallback(object, method, cntl, response);
+			RegisterCallback(method_descriptor, cntl, response, permanet_callback);
+		}
 
 		// bind service addr.
 		// default is empty string. route choose any service to send.
 		bool RegisterService(::google::protobuf::Service* service, const std::string& service_addr);
+
+		// All callback function will been called.
+		// param[in] run_cb_times : The number of calls to call callbacks.
+		void RunCallback(uint32_t run_cb_times = 20);
 
 		// Clear All Setting
 		//	* Disconnect.
@@ -146,19 +178,22 @@ class Channel : public google::protobuf::RpcChannel {
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Channel);
 
 		// clear old callback if it exist.
-		bool ClearCallback(const std::string& callback_key);
+		bool DelCallback(const std::string& callback_key);
 
 		inline bool IsRequestMode(const frrpc::RpcPacketPtr& package){ return package->rpc_meta.rpc_request_meta().request_id() != RPC_REQUEST_ID_NULL; }
+
+		void RegisterCallback(const google::protobuf::MethodDescriptor* method, google::protobuf::RpcController* cntl, google::protobuf::Message* response, google::protobuf::Closure* permanet_callback);
 	private:
 		bool init_success_;
 		frrpc::network::RpcNetChannel* rpc_net_;
-		std::map<RpcRequestId, RequestCallBack> request_callback_;
-		std::map<std::string, RegisterCallBack> register_callback_;
+		std::map<RpcRequestId, RequestCallBack*> request_callback_;
+		std::map<std::string, RegisterCallBack*> register_callback_;
 		ChannelOption option_;
 		std::atomic<RpcRequestId> request_id_;
 		std::function<void(const network::eNetEvent& event)> net_event_cb_;
 };
 
+/*
 // template function list : RegisterRpcMethod
 // Zero
 inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub, const std::string& method_name, void (*function)(google::protobuf::Message*)){
@@ -318,6 +353,8 @@ inline void RegisterRpcMethod(Channel& channel, google::protobuf::Service* stub,
 	google::protobuf::Message* response = stub->GetResponsePrototype(method_descriptor).New();
 	channel.RegisterCallback(method_descriptor, response, frrpc::NewPermanentCallback(object, method, response, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9));
 }
+
+*/
 
 } //namespace frrpc
 

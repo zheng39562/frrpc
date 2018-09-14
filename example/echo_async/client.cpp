@@ -34,16 +34,14 @@ bool g_wait_rsp_echo(false);
 bool g_wait_rsp_register_echo(false);
 bool g_wait_rsp_register_class_echo(false);
 
-void OnEcho(example::response* rsp, frrpc::Controller* ctnl){
+void OnEcho(google::protobuf::RpcController* ctnl, google::protobuf::Message* response){
+	example::response* rsp = dynamic_cast<example::response*>(response);
 	DEBUG_D("Receive response [%s]", rsp->msg().c_str());
-
-	// this point of object is you created.So you must delete it.
-	DELETE_POINT_IF_NOT_NULL(rsp);
 
 	g_wait_rsp_echo = false;
 }
 
-void OnRegisterEcho(google::protobuf::Message* response, frrpc::Controller* ctnl){
+void OnRegisterEcho(google::protobuf::RpcController* ctnl, google::protobuf::Message* response){
 	example::response* rsp = dynamic_cast<example::response*>(response);
 	DEBUG_D("Receive response [%s]", rsp->msg().c_str());
 
@@ -52,7 +50,7 @@ void OnRegisterEcho(google::protobuf::Message* response, frrpc::Controller* ctnl
 
 class EchoClass{
 	public:
-		void OnRegisterClassEcho(google::protobuf::Message* response, frrpc::Controller* ctnl){
+		void OnRegisterClassEcho(google::protobuf::RpcController* ctnl, google::protobuf::Message* response){
 			example::response* rsp = dynamic_cast<example::response*>(response);
 			DEBUG_D("Receive response [%s]", rsp->msg().c_str());
 			g_wait_rsp_register_class_echo = false;
@@ -99,21 +97,24 @@ int main(int argc, char* argv[]){
 	example::EchoService_Stub stub(&channel);
 	channel.RegisterService(&stub, service_addr);
 
+
 	// register request method.
 	DEBUG_D("Register Echo.");
-	frrpc::RegisterRpcMethod(channel, &stub, "RegisterEcho", &OnRegisterEcho, cntl);
+	//frrpc::RegisterRpcMethod(channel, &stub, "RegisterEcho", &OnRegisterEcho, cntl);
+	channel.RegisterCallback(&stub, "RegisterEcho", &OnRegisterEcho);
 
 	// register class method.
 	EchoClass echo_object;
 	DEBUG_D("Register Register Class Echo.");
-	frrpc::RegisterRpcMethod(channel, &stub, "RegisterClassEcho", &echo_object, &EchoClass::OnRegisterClassEcho, cntl);
+	//frrpc::RegisterRpcMethod(channel, &stub, "RegisterClassEcho", &echo_object, &EchoClass::OnRegisterClassEcho, cntl);
+	channel.RegisterCallback(&stub, "RegisterClassEcho", &echo_object, &EchoClass::OnRegisterClassEcho);
 
 	// normal request method
 	DEBUG_D("Normal Echo.");
 	example::request req;
 	req.set_msg("hello server.");
-	example::response* rsp = new example::response();
-	stub.Echo(cntl, &req, rsp, frrpc::NewCallback(&OnEcho, rsp, cntl));
+	//stub.Echo(cntl, &req, rsp, frrpc::NewCallback(&OnEcho, rsp, cntl));
+	google::protobuf::RpcController* req_cntl = channel.SendRequest(&stub, "Echo", &req, &OnEcho);
 
 	WaitAllRsp(channel);
 

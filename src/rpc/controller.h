@@ -91,6 +91,7 @@ class Controller : public google::protobuf::RpcController {
 		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Controller);
 
 		LinkID link_id_;
+		std::string error;
 };
 
 }// namespace frrpc

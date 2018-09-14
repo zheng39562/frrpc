@@ -16,7 +16,8 @@ using namespace frrpc::network;
 namespace frrpc{
 
 Controller::Controller()
-	:link_id_(RPC_LINK_ID_NULL)
+	:link_id_(RPC_LINK_ID_NULL),
+	 error()
 {
 	;
 }
@@ -25,15 +26,16 @@ Controller::~Controller(){
 }
 
 void Controller::Reset(){
-	;
+	link_id_ = 0;
+	error = "";
 }
 
 bool Controller::Failed() const{
-	return true;
+	return !error.empty();
 }
 
 string Controller::ErrorText() const{
-	return "";
+	return error;
 }
 
 void Controller::StartCancel(){
@@ -41,7 +43,7 @@ void Controller::StartCancel(){
 }
 
 void Controller::SetFailed(const string& reason){
-	;
+	error = reason;
 }
 
 bool Controller::IsCanceled() const{

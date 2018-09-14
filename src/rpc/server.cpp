@@ -193,6 +193,9 @@ void Server::ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message){
 		return;
 	}
 
+	rpc_message->rpc_meta.mutable_rpc_response_meta()->set_failed(cntl->Failed());
+	rpc_message->rpc_meta.mutable_rpc_response_meta()->set_error(cntl->ErrorText());
+
 	if(!rpc_net_->Send(cntl->link_id(), rpc_message->rpc_meta, *(rpc_message->response))){
 		RPC_DEBUG_E("Fail to send message.");
 		return;
