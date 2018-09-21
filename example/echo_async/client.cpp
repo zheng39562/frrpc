@@ -51,9 +51,14 @@ void OnRegisterEcho(google::protobuf::RpcController* ctnl, google::protobuf::Mes
 class EchoClass{
 	public:
 		void OnRegisterClassEcho(google::protobuf::RpcController* ctnl, google::protobuf::Message* response){
-			example::response* rsp = dynamic_cast<example::response*>(response);
-			DEBUG_D("Receive response [%s]", rsp->msg().c_str());
-			g_wait_rsp_register_class_echo = false;
+			if(!ctnl->Failed()){
+				example::response* rsp = dynamic_cast<example::response*>(response);
+				DEBUG_D("Receive response [%s]", rsp->msg().c_str());
+				g_wait_rsp_register_class_echo = false;
+			}
+			else{
+				DEBUG_E("error return [%s]", ctnl->ErrorText().c_str());
+			}
 		}
 };
 
