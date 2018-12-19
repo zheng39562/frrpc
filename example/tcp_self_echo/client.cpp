@@ -6,9 +6,9 @@
  * \version 
  * * \author zheng39562@163.com
 **********************************************************/
-#include "fr_public/pub_log.h"
-#include "fr_public/pub_memory.h"
-#include "fr_public/pub_tool.h"
+#include "frpublic/pub_log.h"
+#include "frpublic/pub_memory.h"
+#include "frpublic/pub_tool.h"
 #include "network/frnet_epoll.h"
 
 #include <sys/types.h> 

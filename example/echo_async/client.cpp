@@ -105,20 +105,17 @@ int main(int argc, char* argv[]){
 
 	// register request method.
 	DEBUG_D("Register Echo.");
-	//frrpc::RegisterRpcMethod(channel, &stub, "RegisterEcho", &OnRegisterEcho, cntl);
 	channel.RegisterCallback(&stub, "RegisterEcho", &OnRegisterEcho);
 
 	// register class method.
 	EchoClass echo_object;
 	DEBUG_D("Register Register Class Echo.");
-	//frrpc::RegisterRpcMethod(channel, &stub, "RegisterClassEcho", &echo_object, &EchoClass::OnRegisterClassEcho, cntl);
 	channel.RegisterCallback(&stub, "RegisterClassEcho", &echo_object, &EchoClass::OnRegisterClassEcho);
 
 	// normal request method
 	DEBUG_D("Normal Echo.");
 	example::request req;
 	req.set_msg("hello server.");
-	//stub.Echo(cntl, &req, rsp, frrpc::NewCallback(&OnEcho, rsp, cntl));
 	google::protobuf::RpcController* req_cntl = channel.SendRequest(&stub, "Echo", &req, &OnEcho);
 
 	WaitAllRsp(channel);
