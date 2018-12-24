@@ -129,7 +129,7 @@ void Channel::RunCallback(uint32_t run_cb_times){
 	if(!init_success_){ RPC_DEBUG_E("Initialization is failed. Please check and try again."); return; }
 
 	queue<RpcPacketPtr> packet_queue;
-	rpc_net_->FetchMessageQueue(packet_queue, 2000);
+	rpc_net_->FetchMessageQueue(packet_queue, run_cb_times);
 	while(!IsAskedToQuit() && !packet_queue.empty()){
 		RpcPacketPtr package = packet_queue.front();
 		packet_queue.pop();
