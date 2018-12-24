@@ -111,9 +111,9 @@ bool RpcServer_Route_Client::RegisterService(const std::string& service_name, co
 bool RpcServer_Route_Client::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){
 	int32_t offset(0);
 	while((binary.size() - offset) > sizeof(PacketSize)){
-		PacketSize size(*(const PacketSize*)binary.buffer()); 
+		PacketSize size(*(const PacketSize*)binary.buffer(offset)); 
 		if(size + sizeof(size) > (binary.size() - read_size)){ 
-			DEBUG_P("packet is not complete.");
+			DEBUG_P("packet is not complete. packet size %d, binary size %d, receive bianry %s", size, binary.size(), binary.to_hex().c_str());
 			return true; 
 		}
 

@@ -393,6 +393,10 @@ class EchoService : public ::google::protobuf::Service {
                        const ::example::request* request,
                        ::example::response* response,
                        ::google::protobuf::Closure* done);
+  virtual void EchoRetError(::google::protobuf::RpcController* controller,
+                       const ::example::request* request,
+                       ::example::response* response,
+                       ::google::protobuf::Closure* done);
   virtual void RegisterEcho(::google::protobuf::RpcController* controller,
                        const ::example::empty* request,
                        ::example::response* response,
@@ -431,6 +435,10 @@ class EchoService_Stub : public EchoService {
   // implements EchoService ------------------------------------------
 
   void Echo(::google::protobuf::RpcController* controller,
+                       const ::example::request* request,
+                       ::example::response* response,
+                       ::google::protobuf::Closure* done);
+  void EchoRetError(::google::protobuf::RpcController* controller,
                        const ::example::request* request,
                        ::example::response* response,
                        ::google::protobuf::Closure* done);

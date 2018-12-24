@@ -17,6 +17,7 @@ message response{
 
 service EchoService{
 	rpc Echo(request) returns (response);
+	rpc EchoRetError(request) returns (response);
 	rpc RegisterEcho(empty) returns (response);
 	rpc RegisterClassEcho(empty) returns (response);
 }

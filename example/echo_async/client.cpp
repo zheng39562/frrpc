@@ -33,12 +33,19 @@ Port g_port_(12345);
 bool g_wait_rsp_echo(false);
 bool g_wait_rsp_register_echo(false);
 bool g_wait_rsp_register_class_echo(false);
+bool g_wait_rsp_echo_ret_error(false);
 
 void OnEcho(google::protobuf::RpcController* ctnl, google::protobuf::Message* response){
 	example::response* rsp = dynamic_cast<example::response*>(response);
 	DEBUG_D("Receive response [%s]", rsp->msg().c_str());
 
 	g_wait_rsp_echo = false;
+}
+
+void OnEchoRetError(google::protobuf::RpcController* ctnl, google::protobuf::Message* response){
+	DEBUG_D("Receive error [%s]", ctnl->Failed() ? ctnl->ErrorText().c_str() : "no error ret.please check code.");
+
+	g_wait_rsp_echo_ret_error = false;
 }
 
 void OnRegisterEcho(google::protobuf::RpcController* ctnl, google::protobuf::Message* response){
@@ -66,7 +73,8 @@ void WaitAllRsp(frrpc::Channel& channel){
 	g_wait_rsp_echo = true;
 	g_wait_rsp_register_echo = true;
 	g_wait_rsp_register_class_echo = true;
-	while((g_wait_rsp_echo || g_wait_rsp_register_echo || g_wait_rsp_register_class_echo) && !frrpc::IsAskedToQuit()){
+	g_wait_rsp_echo_ret_error = true;
+	while((g_wait_rsp_echo || g_wait_rsp_register_echo || g_wait_rsp_register_class_echo || g_wait_rsp_echo_ret_error) && !frrpc::IsAskedToQuit()){
 		frpublic::FrSleep(10);
 		channel.RunCallback();
 	}
@@ -117,6 +125,10 @@ int main(int argc, char* argv[]){
 	example::request req;
 	req.set_msg("hello server.");
 	google::protobuf::RpcController* req_cntl = channel.SendRequest(&stub, "Echo", &req, &OnEcho);
+
+	// normal request method
+	DEBUG_D("Send EchoRetError.");
+	google::protobuf::RpcController* req_cntl_error = channel.SendRequest(&stub, "EchoRetError", &req, &OnEchoRetError);
 
 	WaitAllRsp(channel);
 

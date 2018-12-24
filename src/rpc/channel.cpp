@@ -144,8 +144,10 @@ void Channel::RunCallback(uint32_t run_cb_times){
 					return ;
 				}
 
-				request_callback_iter->second->response->ParseFromArray(package->binary->buffer(), package->binary->size());
 				request_callback_iter->second->cntl->SetFailed(package->rpc_meta.rpc_response_meta().error());
+				if(!request_callback_iter->second->cntl->Failed()){
+					request_callback_iter->second->response->ParseFromArray(package->binary->buffer(), package->binary->size());
+				}
 				request_callback_iter->second->callback->Run();
 				DELETE_POINT_IF_NOT_NULL(request_callback_iter->second);
 
@@ -158,8 +160,10 @@ void Channel::RunCallback(uint32_t run_cb_times){
 					return ;
 				}
 
-				default_callback_iter->second->response->ParseFromArray(package->binary->buffer(), package->binary->size());
 				default_callback_iter->second->cntl->SetFailed(package->rpc_meta.rpc_response_meta().error());
+				if(!default_callback_iter->second->cntl->Failed()){
+					default_callback_iter->second->response->ParseFromArray(package->binary->buffer(), package->binary->size());
+				}
 				default_callback_iter->second->callback->Run();
 				default_callback_iter->second->Clear();
 			}

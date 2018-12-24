@@ -40,6 +40,19 @@ class EchoServiceImpl : public example::EchoService{
 
 			done->Run();
 		}
+
+		virtual void EchoRetError(::google::protobuf::RpcController* controller, const ::example::request* request, ::example::response* response, ::google::protobuf::Closure* done){
+			DEBUG_D("Receive msg [%s]", request->msg().c_str());
+
+			frrpc::Controller* echo_cntl = dynamic_cast<frrpc::Controller*>(controller);
+			if(echo_cntl == nullptr){
+				DEBUG_E("echo controller is null(Fail to Convert RpcController to frrpc::Controller).");
+			}
+
+			echo_cntl->SetFailed("check error is right.");
+			done->Run();
+		}
+
 	private:
 		frrpc::Server* server_;
 };

@@ -58,5 +58,5 @@ void Controller::Clear(){
 	link_id_ = RPC_LINK_ID_NULL;
 }
 
-}// namespace frrpc{
+} // namespace frrpc
 
