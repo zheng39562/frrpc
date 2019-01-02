@@ -25,17 +25,22 @@ namespace frrpc{
 
 class ChannelOption{
 	public:
-		ChannelOption(): compress_type(eCompressType_Not) { ; }
-		~ChannelOption()=default;
+		ChannelOption(std::string _channel_name): channel_name(_channel_name), compress_type(eCompressType_Not) { ; }
+		ChannelOption(std::string _channel_name, eCompressType _compress_type): channel_name(_channel_name), compress_type(_compress_type) { ; }
+		ChannelOption(const ChannelOption& ref){
+			this->channel_name = ref.channel_name;
+			this->compress_type = ref.compress_type;
+		}
+		~ChannelOption() = default;
 	public:
+		std::string channel_name; 
 		eCompressType compress_type;
 };
 
-
 class RegisterCallBack{
 	public:
-		RegisterCallBack(google::protobuf::Closure* _callback, google::protobuf::RpcController* _cntl, google::protobuf::Message* _response)
-			:callback(_callback), cntl(_cntl), response(_response) { }
+		RegisterCallBack(std::string _service_name, std::string _method_name, google::protobuf::Closure* _callback, google::protobuf::RpcController* _cntl, google::protobuf::Message* _response)
+			:service_name(_service_name), method_name(_method_name), callback(_callback), cntl(_cntl), response(_response) {}
 		RegisterCallBack(const RegisterCallBack& ref)=delete;
 		RegisterCallBack& operator=(const RegisterCallBack& ref)=delete;
 		~RegisterCallBack()=default;
@@ -50,6 +55,8 @@ class RegisterCallBack{
 			DELETE_POINT_IF_NOT_NULL(response); 
 		}
 	public:
+		std::string service_name;
+		std::string method_name;
 		google::protobuf::RpcController* cntl;
 		google::protobuf::Closure* callback;
 		google::protobuf::Message* response;

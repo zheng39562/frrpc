@@ -13,7 +13,6 @@
 
 using namespace std;
 using namespace frpublic;
-using namespace google::protobuf;
 
 namespace frrpc{
 

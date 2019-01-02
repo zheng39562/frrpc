@@ -99,7 +99,7 @@ int main(int argc, char* argv[]){
 
 	DEBUG_D("Client option : [%s:%d]", g_ip_.c_str(), g_port_);
 
-	frrpc::ChannelOption channel_option;
+	frrpc::ChannelOption channel_option("echo_async_channel");
 	frrpc::Channel channel(channel_option);
 	if(!channel.StartRoute(g_ip_, g_port_)) {
 		DEBUG_E("Fail to start route.");

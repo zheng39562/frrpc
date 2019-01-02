@@ -9,6 +9,8 @@
 #ifndef _public_define_H
 #define _public_define_H
 
+#include <stdint.h>
+
 typedef uint64_t LinkID;
 typedef uint64_t RpcRequestId;
 

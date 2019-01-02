@@ -9,11 +9,7 @@
 #ifndef _frrpc_function_H
 #define _frrpc_function_H
 
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/message.h>
-#include <google/protobuf/dynamic_message.h>
-
-#include "frpublic/pub_memory.h"
+#include "public_define.h"
 #include "frrpc_define.h"
 
 namespace frrpc{
@@ -32,6 +28,7 @@ uint32_t GetNumberLength(Integer integer){
 
 	return length;
 }
+
 
 }// namespace frrpc{
 

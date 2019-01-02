@@ -20,21 +20,23 @@ OUTPUT_EXECUTE_PATH=/usr/local/bin
 OUTPUT_TEMPORARY_PATH=../../out/tmp
 OUTPUT_EXAMPLE_PATH=../../out/tmp
 
+THIRD_PATH_RAPIDJSON=-I../../third/rapidjson/include/
+
 .PHONY: clean all install example test
 
 # ------------------------------------------------------------------------------------------------------------------------
 # --- cpp pattern --- 
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.cpp
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) ${THIRD_PATH_RAPIDJSON} $(COMMON_INCLUDE) -c $< -o $@
 
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.cc
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) ${THIRD_PATH_RAPIDJSON} $(COMMON_INCLUDE) -c $< -o $@
 
 ./${OUTPUT_TEMPORARY_PATH}/%.o : %.c
 	-mkdir -p ./${OUTPUT_TEMPORARY_PATH}/$(dir $<)
-	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) -c $(COMMON_INCLUDE) $< -o $@
+	$(COMMON_CXX) $(COMMON_CFLAGS) ${OPTIONAL_CFLAGS} $(COMMON_MACRO) ${THIRD_PATH_RAPIDJSON} $(COMMON_INCLUDE) -c $< -o $@
 # ------------------------------------------------------------------------------------------------------------------------
 
 FREEDOM_COMMON_IP=127.0.0.1

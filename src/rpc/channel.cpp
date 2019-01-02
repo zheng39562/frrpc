@@ -74,6 +74,9 @@ void Channel::CallMethod(const MethodDescriptor* method, RpcController* cntl, co
 	}
 	else{
 		RpcRequestId request_id(++request_id_);
+
+		MSG_DEBUG_CHANNEL_REQ(option_.channel_name, method->service()->name(), method->name(), request_id, request);
+
 		if(request_callback_.find(request_id) != request_callback_.end()){
 			RPC_DEBUG_W("request id is repeated."); return ;
 		}
@@ -122,7 +125,7 @@ void Channel::RegisterCallback(const google::protobuf::MethodDescriptor* method,
 	}
 
 	RPC_DEBUG_I("Register function. callback_key [%s] listen method [%s.%d] response name [%s] addr [%p]", callback_key.c_str(), method->full_name().c_str(), method->index(), response->GetDescriptor()->full_name().c_str(), response);
-	register_callback_.insert(make_pair(callback_key, new RegisterCallBack(permanet_callback, cntl, response)));
+	register_callback_.insert(make_pair(callback_key, new RegisterCallBack(method->service()->name(), method->name(), permanet_callback, cntl, response)));
 }
 
 void Channel::RunCallback(uint32_t run_cb_times){
@@ -148,6 +151,8 @@ void Channel::RunCallback(uint32_t run_cb_times){
 				if(!request_callback_iter->second->cntl->Failed()){
 					request_callback_iter->second->response->ParseFromArray(package->binary->buffer(), package->binary->size());
 				}
+
+				MSG_DEBUG_CHANNEL_RSP(option_.channel_name, package->rpc_meta.rpc_request_meta().request_id(), request_callback_iter->second->response);
 				request_callback_iter->second->callback->Run();
 				DELETE_POINT_IF_NOT_NULL(request_callback_iter->second);
 
@@ -159,17 +164,20 @@ void Channel::RunCallback(uint32_t run_cb_times){
 					RPC_DEBUG_E("Can not find key [%s.%d]", package->rpc_meta.service_name().c_str(), package->rpc_meta.method_index());
 					return ;
 				}
+				RegisterCallBack* register_call_back = default_callback_iter->second;
 
-				default_callback_iter->second->cntl->SetFailed(package->rpc_meta.rpc_response_meta().error());
-				if(!default_callback_iter->second->cntl->Failed()){
-					default_callback_iter->second->response->ParseFromArray(package->binary->buffer(), package->binary->size());
+				register_call_back->cntl->SetFailed(package->rpc_meta.rpc_response_meta().error());
+				if(!register_call_back->cntl->Failed()){
+					register_call_back->response->ParseFromArray(package->binary->buffer(), package->binary->size());
 				}
-				default_callback_iter->second->callback->Run();
-				default_callback_iter->second->Clear();
+
+				MSG_DEBUG_CHANNEL_NOTIFY(option_.channel_name, register_call_back->service_name, register_call_back->method_name, register_call_back->response);
+				register_call_back->callback->Run();
+				register_call_back->Clear();
 			}
 		}
 		else{
-			if(net_event_cb_ != NULL){
+			MSG_DEBUG_CHANNEL_EVENT(option_.channel_name, eNetEvent_Name(package->net_event)); if(net_event_cb_ != NULL){
 				Controller* cntl = new Controller();
 				if(cntl == NULL){
 					RPC_DEBUG_E("Fail to create controller."); continue;

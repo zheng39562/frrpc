@@ -4,6 +4,7 @@ PROJECT_NAME=route
 PROJECT_OBJECTS= \
 	./$(OUTPUT_TEMPORARY_PATH)/../pb/net.pb.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../pb/route.pb.o \
+	./$(OUTPUT_TEMPORARY_PATH)/../public/rpc_pb2js.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../public/rpc_heart.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../public/rpc_serializable.o \
 	./$(OUTPUT_TEMPORARY_PATH)/../route/route.o \

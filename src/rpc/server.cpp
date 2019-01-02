@@ -87,6 +87,7 @@ bool Server::SendRpcMessage(LinkID link_id, const std::string& service_name, con
 	rpc_meta.mutable_rpc_request_meta()->set_request_id(RPC_REQUEST_ID_NULL);
 	rpc_meta.set_compress_type(compress_type_);
 
+	MSG_DEBUG_SERVER_NOTIFY(service_name, method_name, link_id, &response);
 	if(!rpc_net_->Send(link_id, rpc_meta, response)){
 		RPC_DEBUG_E("Fail to send message. link id [%d]", link_id);
 		return false;
@@ -151,14 +152,22 @@ bool Server::InitThreads(ServerOption& option){
 						if(package->net_event == eNetEvent_Method){
 							google::protobuf::Service* cur_service(NULL);
 							if(ParseBinary(package, *rpc_message, &cur_service)){
+								const ::google::protobuf::MethodDescriptor* method_descriptor = rpc_message->method_descriptor;
+								uint64_t request_id = rpc_message->rpc_meta.rpc_request_meta().request_id();
+								MSG_DEBUG_SERVER_REQ(method_descriptor->service()->name(), method_descriptor->name(), package->link_id, request_id, rpc_message->request);
+
 								cur_service->CallMethod(rpc_message->method_descriptor, cntl, rpc_message->request, rpc_message->response, done);
+
+								MSG_DEBUG_SERVER_RSP(package->link_id, request_id, rpc_message->response);
 							}
 							else{
+								MSG_DEBUG_SERVER_EVENT(eNetEvent_Name(package->net_event), package->link_id);
 								RPC_DEBUG_E("Parse rpc message is failed.");
 								continue;
 							}
 						}
 						else{
+							MSG_DEBUG_SERVER_EVENT(eNetEvent_Name(package->net_event), package->link_id);
 							if(net_event_cb_ != NULL){
 								net_event_cb_(package->link_id, package->net_event);
 							}
