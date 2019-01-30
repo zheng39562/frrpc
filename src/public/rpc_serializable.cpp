@@ -9,6 +9,7 @@
 #include "rpc_serializable.h"
 
 using namespace frrpc::network;
+using namespace frrpc::route;
 using namespace frpublic;
 using namespace google::protobuf;
 
@@ -70,6 +71,24 @@ BinaryMemoryPtr BuildBinaryFromMessage(const NetInfo& net_info, const RpcMeta& m
 	}
 
 	return binary;
+}
+
+frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const route::eRouteCmd cmd, const google::protobuf::Message& cmd_info){
+	RouteCmdRequest cmd_request;
+	cmd_request.set_cmd(cmd);
+	if(!cmd_info.SerializeToString(cmd_request.mutable_request_binary())){
+		DEBUG_E("Fail to serialize route service info. cmd %d", cmd);
+		return false;
+	}
+
+	frrpc::network::NetInfo net_info;
+	net_info.set_net_type(eNetType_RouteCmd);
+	if(!cmd_request.SerializeToString(net_info.mutable_net_binary())){
+		DEBUG_E("Fail to serialize cmd_request. cmd %d", cmd);
+		return false;
+	}
+
+	return BuildBinaryFromMessage(net_info);
 }
 
 bool GetMessageFromBinary(const BinaryMemory& binary, int offset, NetInfo& net_info, RpcPacketPtr& packet){

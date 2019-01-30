@@ -12,13 +12,14 @@
 #include "frpublic/pub_memory.h"
 #include "pb/net.pb.h"
 #include "pb/frrpc.pb.h"
+#include "pb/route.pb.h"
 #include "public_define.h"
 
 namespace frrpc{
 
 class RpcPacket{
 	public:
-		RpcPacket(LinkID _link_id, network::eNetEvent _net_event): link_id(_link_id), net_event(_net_event), rpc_meta(), binary(){ ; }
+		RpcPacket(LinkID _link_id, eRpcEvent _net_event): link_id(_link_id), net_event(_net_event), rpc_meta(), binary(){ ; }
 		RpcPacket(const RpcPacket& ref){
 			link_id = ref.link_id;
 			net_event = ref.net_event;
@@ -56,7 +57,7 @@ class RpcPacket{
 		}
 	public:
 		LinkID link_id;
-		network::eNetEvent net_event;
+		eRpcEvent net_event;
 		RpcMeta rpc_meta;
 		frpublic::BinaryMemoryPtr binary;
 };
@@ -67,6 +68,8 @@ typedef std::shared_ptr<RpcPacket> RpcPacketPtr;
 //
 frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const network::NetInfo& net_info);
 frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const network::NetInfo& net_info, const RpcMeta& meta, const google::protobuf::Message& body);
+
+frpublic::BinaryMemoryPtr BuildBinaryFromMessage(const route::eRouteCmd cmd, const google::protobuf::Message& cmd_info);
 
 // parse binary, set net_info and packet.
 // notice : packet has many variables. It only set net_event, rpc_meta and binary.

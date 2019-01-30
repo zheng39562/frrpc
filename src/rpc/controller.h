@@ -16,6 +16,7 @@
 
 namespace frrpc{
 
+class Channel;	
 // An RpcController mediates a single method call.  The primary purpose of
 // the controller is to provide a way to manipulate settings specific to the
 // RPC implementation and to find out about RPC-level errors.
@@ -24,10 +25,7 @@ namespace frrpc{
 // "least common denominator" set of features which we expect all
 // implementations to support.  Specific implementations may provide more
 // advanced features (e.g. deadline propagation).
-//
-// This introduce from project of protobuf.
-//class Controller : public google::protobuf::RpcController{
-class Controller : public google::protobuf::RpcController {
+class Controller : public google::protobuf::RpcController{
 	public:
 		Controller();
 		virtual ~Controller();
@@ -45,7 +43,6 @@ class Controller : public google::protobuf::RpcController {
 		// be called before a call has finished.  If Failed() returns true, the
 		// contents of the response message are undefined.
 		virtual bool Failed() const;
-
 		// If Failed() is true, returns a human-readable description of the error.
 		virtual std::string ErrorText() const;
 
@@ -71,7 +68,6 @@ class Controller : public google::protobuf::RpcController {
 		// as well give up on replying to it.  The server should still call the
 		// final "done" callback.
 		virtual bool IsCanceled() const;
-
 		// Asks that the given callback be called when the RPC is canceled.  The
 		// callback will always be called exactly once.  If the RPC completes without
 		// being canceled, the callback will be called after completion.  If the RPC
@@ -80,22 +76,47 @@ class Controller : public google::protobuf::RpcController {
 		//
 		// NotifyOnCancel() must be called no more than once per request.
 		virtual void NotifyOnCancel(google::protobuf::Closure* callback);
+	private:
+		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Controller);
 
-		// custom variables;
-		//
-		void Clear();
+		std::string error;
+};
+
+class ChannelController : public Controller{
+	public:
+		ChannelController(Channel* _channel, bool _is_sync);
+		virtual ~ChannelController();
+	public:
+		inline void SetRequestId(RpcRequestId request_id){ request_id_ = request_id; }
+		inline bool is_sync(){ return is_sync_; }
+
+		virtual void Reset();
+
+		virtual void StartCancel();
+		virtual bool IsCanceled() const;
+		virtual void NotifyOnCancel(google::protobuf::Closure* callback);
+	private:
+		bool is_cancel_;
+		bool is_sync_;
+		RpcRequestId request_id_;
+		Channel* channel_;
+		google::protobuf::Closure* callback_;
+};
+
+class ServerController : public Controller{
+	public:
+		ServerController();
+		virtual ~ServerController();
+	public:
+		virtual void Reset();
 
 		inline void set_link(LinkID link_id){ link_id_ = link_id; }
 		inline LinkID link_id()const{ return link_id_; }
 	private:
-		GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Controller);
-
 		LinkID link_id_;
-		std::string error;
 };
 
 }// namespace frrpc
-
 
 #endif 
 

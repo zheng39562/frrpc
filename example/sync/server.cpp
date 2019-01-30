@@ -13,16 +13,12 @@
 
 using namespace std;
 
-// Golbal Variables
-string g_ip_("0.0.0.0");
-Port g_port_(12345);
-
 class EchoServiceImpl : public example::EchoService{
 	public:
-		EchoServiceImpl(frrpc::Server* server):server_(server){ ; }
+		EchoServiceImpl(frrpc::Server* server):server_(server),recv_echo_count_(0){ ; }
 	public:
 		virtual void Echo(::google::protobuf::RpcController* controller, const ::example::request* request, ::example::response* response, ::google::protobuf::Closure* done){
-			frrpc::Controller* echo_cntl = dynamic_cast<frrpc::Controller*>(controller);
+			frrpc::ServerController* echo_cntl = dynamic_cast<frrpc::ServerController*>(controller);
 			if(echo_cntl == nullptr){
 				DEBUG_E("echo controller is null(Fail to Convert RpcController to frrpc::Controller).");
 			}
@@ -30,31 +26,22 @@ class EchoServiceImpl : public example::EchoService{
 			DEBUG_D("Receive msg [%s]", request->msg().c_str());
 
 			response->set_msg("hello client.");
-
-			bool ret(true);
-			ret &= server_->SendRpcMessage(echo_cntl->link_id(), "EchoService", "RegisterEcho", *response);
-			ret &= server_->SendRpcMessage(echo_cntl->link_id(), "EchoService", "RegisterClassEcho", *response);
-			if(!ret){
-				DEBUG_E("SendRpcMessage has error.");
+			++recv_echo_count_;
+			if(recv_echo_count_ == 1){
+				if(!server_->SendRpcMessage(echo_cntl->link_id(), "EchoService", "RegisterEcho", *response)){
+					DEBUG_E("SendRpcMessage has error.");
+				}
+			}
+			else{
+				echo_cntl->SetFailed("second request.return error.(this is right)");
+				recv_echo_count_ = 0;
 			}
 
 			done->Run();
 		}
-
-		virtual void EchoRetError(::google::protobuf::RpcController* controller, const ::example::request* request, ::example::response* response, ::google::protobuf::Closure* done){
-			DEBUG_D("Receive msg [%s]", request->msg().c_str());
-
-			frrpc::Controller* echo_cntl = dynamic_cast<frrpc::Controller*>(controller);
-			if(echo_cntl == nullptr){
-				DEBUG_E("echo controller is null(Fail to Convert RpcController to frrpc::Controller).");
-			}
-
-			echo_cntl->SetFailed("check error is right.");
-			done->Run();
-		}
-
 	private:
 		frrpc::Server* server_;
+		int recv_echo_count_;
 };
 
 int main(int argc, char* argv[]){
@@ -66,20 +53,20 @@ int main(int argc, char* argv[]){
 		return -1;
 	}
 
-	g_ip_ = string(argv[1]);
-	g_port_ = stoi(string(argv[2]));
+	string ip = string(argv[1]);
+	Port port = stoi(string(argv[2]));
 	string service_addr = "";
 	if(argc == 4){
 		service_addr = string(argv[3]);
 	}
 
-	DEBUG_D("Network option : [%s:%d]", g_ip_.c_str(), g_port_);
+	DEBUG_D("Network option : [%s:%d]", ip.c_str(), port);
 
 	frrpc::ServerOption option;
 	option.work_thread_num = 2;
 	option.service_addr = service_addr;
 	frrpc::Server server(option);
-	if(!server.StartRoute({ tuple<string, Port>(g_ip_, g_port_) })){
+	if(!server.StartRoute({ tuple<string, Port>(ip, port) })){
 		DEBUG_E("Fail to start server.");
 		return -1;
 	}

@@ -36,6 +36,8 @@ class RpcServer_Route_Client : public frnet::NetListen{
 		bool Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body);
 		bool Send(std::vector<LinkID> link_ids, const RpcMeta& meta, const google::protobuf::Message& body);
 
+		bool Disconnect(LinkID link_id);
+
 		bool RegisterService(const std::string& service_name, const std::string& service_addr);
 	protected:
 		// param[out] read_size : 
@@ -51,16 +53,17 @@ class RpcServer_Route_Client : public frnet::NetListen{
 
 		// include all error : read, write, disconnect and so on.
 		virtual void OnError(const frnet::NetError& net_error);
-
 	private:
 		bool ReturnError(const std::string& err_info); 
 
 		bool ReceiveRoutePacket(frrpc::network::NetInfo& net_info, RpcPacketPtr& packet);
 
-		bool PerformRouteCmd(frrpc::network::NetInfo& net_info);
-		bool ReceiveEventNotice(frrpc::route::RouteResponse route_response);
+		bool doRouteCmd(frrpc::network::NetInfo& net_info);
+		bool doRouteNotify(frrpc::network::NetInfo& net_info);
+		bool ReceiveEventNotice(frrpc::route::RouteCmdResponse route_response);
 
 		bool Send(frrpc::route::RouteNetInfo* route_net_info, const RpcMeta& meta, const google::protobuf::Message& body);
+		bool SendRouteCmd(frrpc::route::eRouteCmd cmd, const google::protobuf::Message& cmd_info);
 	private:
 		frnet::NetClient* net_client_;
 		RouteID route_id_;
@@ -96,6 +99,8 @@ class RpcServer_Route : public RpcNetServer{
 		inline LinkID BuildLinkID(RouteID route_id, Socket socket)const{ return route_id * pow(10, route_length_) + socket; }
 		inline Socket GetSocket(LinkID link_id)const{ return (Socket)(link_id % (uint32_t)pow(10, route_length_)); }
 		inline RouteID GetRouteID(LinkID link_id)const{ return (RouteID)(link_id / (uint32_t)pow(10, route_length_)); }
+	private:
+		RpcServer_Route_Client* getRouteClinet(LinkID link_id);
 	private:
 		std::vector<RpcServer_Route_Client*> route_client_list_;
 		uint32_t route_length_;

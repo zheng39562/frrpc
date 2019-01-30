@@ -33,7 +33,10 @@ void RpcBaseNet::FetchMessageQueue(std::queue<RpcPacketPtr>& packet_queue, int32
 
 void RpcBaseNet::PushMessageToQueue(const RpcPacketPtr& packet){
 	if(packet != NULL){
-		RPC_DEBUG_P("receive a complete packet. link id [%d] net event [%d] name [%s.%d] binary [%s]", packet->link_id, packet->net_event, packet->rpc_meta.service_name().c_str(), packet->rpc_meta.method_index(), (packet->binary != nullptr ? packet->binary->to_hex().c_str() : "empty binary"));
+		RPC_DEBUG_P("receive a complete packet. link id [%d] net event [%s] name [%s.%d] binary [%s]", 
+				packet->link_id, eRpcEvent_Name(packet->net_event).c_str(), packet->rpc_meta.service_name().c_str(), packet->rpc_meta.method_index(), 
+				(packet->binary != nullptr ? packet->binary->to_hex().c_str() : "empty binary"));
+
 		packet_queue_.push(packet);
 	}
 	else{

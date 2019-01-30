@@ -22,8 +22,6 @@
 namespace frrpc{
 namespace route{ 
 
-std::string GetCommandName(eRouteCmd cmd);
-
 class RouteServiceInfos{
 	public:
 		RouteServiceInfos(const std::string& service_name);
@@ -62,20 +60,6 @@ class RpcRoute : public frnet::NetListen{
 		typedef std::string ServiceName;
 		typedef std::string ServiceAddr;
 
-	private:
-		frnet::NetServer* net_server_;
-		RpcHeart rpc_heart_;
-
-		std::mutex mutex_service_2info_;
-		std::map<ServiceName, RouteServiceInfosPtr> service_2info_;
-		std::map<Socket, ServiceName> service_socket_2name_;
-
-		std::map<Socket, std::map<ServiceName, Socket> > channel_service_register_;
-
-		std::mutex mutex_event_disconnect_;
-		std::map<Socket, std::set<Socket> > event_dis_notice_2listen_; // socket listen socket list
-		std::map<Socket, std::set<Socket> > event_dis_listen_2notice_; // notice list when socket disconnect
-
 	public:
 		RpcRoute();
 		virtual ~RpcRoute();
@@ -112,12 +96,15 @@ class RpcRoute : public frnet::NetListen{
 		bool CommandProcess(Socket socket, const frpublic::BinaryMemory& binary, int32_t offset, frrpc::network::NetInfo& net_info);
 		bool HeartProcess(Socket socket, const frpublic::BinaryMemory& binary, int32_t offset, frrpc::network::NetInfo& net_info);
 
+		/* zjm-wait
 		bool EventRegister(Socket socket, const std::string& binary);
 		bool EventCancel(Socket socket, const std::string& binary);
 		bool EventNoticeDisconnect(Socket socket, const std::string& binary);
+		*/
 
 		bool ServerServiceRegister(Socket socket, const std::string& binary);
-		bool ServerServiceCancel(Socket socket);
+		bool ServerServiceCancel(Socket socket, const std::string& binary);
+		bool ServerDisconnectChannelFunc(Socket socket, const std::string& binary);
 
 		bool ChannelServiceRegister(Socket socket, const std::string& binary);
 
@@ -133,6 +120,20 @@ class RpcRoute : public frnet::NetListen{
 		Socket FindServiceSocket(const std::string& service_name, const std::string& service_addr);
 
 		Socket GetServerSocket(Socket channel_socket, const std::string& service_name);
+
+	private:
+		frnet::NetServer* net_server_;
+		RpcHeart rpc_heart_;
+
+		std::mutex mutex_service_2info_;
+		std::map<ServiceName, RouteServiceInfosPtr> service_2info_;
+		std::map<Socket, ServiceName> service_socket_2name_;
+
+		std::map<Socket, std::map<ServiceName, Socket> > channel_service_register_;
+
+		std::mutex mutex_event_disconnect_;
+		std::map<Socket, std::set<Socket> > event_dis_notice_2listen_; // socket listen socket list
+		std::map<Socket, std::set<Socket> > event_dis_listen_2notice_; // notice list when socket disconnect
 };
 
 

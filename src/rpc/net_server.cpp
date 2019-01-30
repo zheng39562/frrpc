@@ -85,27 +85,17 @@ bool RpcServer_Route_Client::Send(std::vector<LinkID> link_ids, const RpcMeta& m
 	return Send(&route_net_info, meta, body);
 }
 
+bool RpcServer_Route_Client::Disconnect(LinkID link_id){
+	ServerDisconnectChannel dinconnect_req;
+	dinconnect_req.add_channel_socket(rpc_server_route_->GetSocket(link_id));
+	return SendRouteCmd(eRouteCmd_Server_DisconnectChannel, dinconnect_req);
+}
+
 bool RpcServer_Route_Client::RegisterService(const std::string& service_name, const std::string& service_addr){
 	frrpc::route::RouteServiceInfo route_service_info;
 	route_service_info.set_name(service_name);
 	route_service_info.set_addr(service_addr);
-
-	frrpc::route::RouteRequest route_request;
-	route_request.set_cmd(eRouteCmd_Server_ServiceRegister);
-	if(!route_service_info.SerializeToString(route_request.mutable_request_binary())){
-		RPC_DEBUG_E("Fail to serialize route service info.");
-		return false;
-	}
-	
-	frrpc::network::NetInfo net_info;
-	net_info.set_net_type(eNetType_RouteCmd);
-	if(!route_request.SerializeToString(net_info.mutable_net_binary())){
-		RPC_DEBUG_E("Fail to serialize route request.");
-		return false;
-	}
-
-	BinaryMemoryPtr register_packet = BuildBinaryFromMessage(net_info);
-	return register_packet != NULL && net_client_->Send(register_packet) != eNetSendResult_Ok;
+	return SendRouteCmd(eRouteCmd_Server_ServiceRegister, route_service_info);
 }
 
 bool RpcServer_Route_Client::OnReceive(Socket socket, const frpublic::BinaryMemory& binary, size_t& read_size){
@@ -121,7 +111,7 @@ bool RpcServer_Route_Client::OnReceive(Socket socket, const frpublic::BinaryMemo
 		if(size == 0){ return ReturnError("size is zero."); }
 
 		NetInfo net_info;
-		RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
+		RpcPacketPtr packet(new RpcPacket(0, eRpcEvent_Method));
 		if(packet != NULL){
 			if(!GetMessageFromBinary(binary, offset, net_info, packet)){
 				return ReturnError("Error : GetMessageFromBinary.");
@@ -129,7 +119,8 @@ bool RpcServer_Route_Client::OnReceive(Socket socket, const frpublic::BinaryMemo
 
 			switch(net_info.net_type()){
 				case eNetType_Route: if(!ReceiveRoutePacket(net_info, packet)){ return false; } break;
-				case eNetType_RouteCmd: if(!PerformRouteCmd(net_info)){ return false; } break;
+				case eNetType_RouteCmd: if(!doRouteCmd(net_info)){ return false; } break;
+				case eNetType_RouteNotify: if(!doRouteNotify(net_info)){ return false; } break;
 				case eNetType_Heart: break;
 				default: RPC_DEBUG_E("unknow net type [%d]", net_info.net_type()); return false;
 			}
@@ -173,13 +164,10 @@ bool RpcServer_Route_Client::ReceiveRoutePacket(NetInfo& net_info, RpcPacketPtr&
 	return true;
 }
 
-bool RpcServer_Route_Client::PerformRouteCmd(NetInfo& net_info){
-	frrpc::route::RouteResponse route_response;
+bool RpcServer_Route_Client::doRouteCmd(NetInfo& net_info){
+	frrpc::route::RouteCmdResponse route_response;
 	if(route_response.ParseFromString(net_info.net_binary())){
 		switch(route_response.cmd()){
-			case eRouteCmd_EventRegister: RPC_DEBUG_E("This cmd(EventRegister) has not response."); return false;
-			case eRouteCmd_EventCancel: RPC_DEBUG_E("This cmd(EventCancel) has not response."); return false;
-			case eRouteCmd_EventNotice: return ReceiveEventNotice(route_response);
 			case eRouteCmd_Server_ServiceRegister: RPC_DEBUG_E("This cmd(ServerRegister) has not response."); return false;
 			case eRouteCmd_Server_ServiceCancel: RPC_DEBUG_E("This cmd(ServerRegister) has not response."); return false;
 			default: RPC_DEBUG_E("unknow route command [%d]", route_response.cmd()); return false;
@@ -188,24 +176,22 @@ bool RpcServer_Route_Client::PerformRouteCmd(NetInfo& net_info){
 	return false;
 }
 
-bool RpcServer_Route_Client::ReceiveEventNotice(frrpc::route::RouteResponse route_response){
-	frrpc::route::EventNotice event_notice;
-	if(!event_notice.ParseFromString(route_response.response_binary())){
-		DEBUG_E("Fail to parse event notice."); return false;
-	}
-
-	switch(event_notice.type()){
-		case eRouteEventType_Disconnect:{ 
-			frrpc::route::EventNotice_Disconnect event_notice_disconnect;
-			if(!event_notice_disconnect.ParseFromString(event_notice.event_binary())){
-				DEBUG_E("Fail to parse event notice of disconnect."); return false;
-			}
-			
-			rpc_server_route_->PushMessageToQueue(RpcPacketPtr(new RpcPacket(rpc_server_route_->BuildLinkID(route_id(), event_notice_disconnect.socket()), eNetEvent_Disconnection)));
-			break;
+bool RpcServer_Route_Client::doRouteNotify(NetInfo& net_info){
+	frrpc::route::RouteNotify route_notify;
+	if(route_notify.ParseFromString(net_info.net_binary())){
+		switch(route_notify.type()){
+			case eRouteNotifyType_Disconnect: 
+				frrpc::route::NotifyType_Disconnect notify_disconnect;
+				if(!notify_disconnect.ParseFromString(route_notify.data())){
+					DEBUG_E("Fail to parse event notice of disconnect."); return false;
+				}
+				
+				rpc_server_route_->PushMessageToQueue(RpcPacketPtr(new RpcPacket(rpc_server_route_->BuildLinkID(route_id(), notify_disconnect.socket()), eRpcEvent_Disconnection)));
+				break;
 		}
+		return true;
 	}
-	return true;
+	return false;
 }
 
 bool RpcServer_Route_Client::Send(RouteNetInfo* route_net_info, const RpcMeta& meta, const google::protobuf::Message& body){
@@ -225,6 +211,13 @@ bool RpcServer_Route_Client::Send(RouteNetInfo* route_net_info, const RpcMeta& m
 
 	return true;
 }
+
+bool RpcServer_Route_Client::SendRouteCmd(eRouteCmd cmd, const google::protobuf::Message& cmd_info){
+	BinaryMemoryPtr register_packet = BuildBinaryFromMessage(cmd, cmd_info);
+	return register_packet != NULL && net_client_->Send(register_packet) == eNetSendResult_Ok;
+}
+
+//===========================================================================================================
 
 RpcServer_Route::RpcServer_Route(const std::vector<std::tuple<std::string, Port> >& route_list)
 	:route_client_list_(),
@@ -265,17 +258,20 @@ bool RpcServer_Route::Stop(){
 }
 
 bool RpcServer_Route::Disconnect(LinkID link_id){
-	// todo: send disconnect message to route.
-	return true;
+	RpcServer_Route_Client* client = RpcServer_Route::getRouteClinet(link_id);
+	if(client != NULL){
+		return client->Disconnect(link_id);
+	}
+
+	return false;
 }
 
 bool RpcServer_Route::Send(LinkID link_id, const RpcMeta& meta, const google::protobuf::Message& body){
-	RouteID route_id = GetRouteID(link_id);
-	if(0 <= route_id && route_id < route_client_list_.size()){
-		return route_client_list_[route_id]->Send(link_id, meta, body);
+	RpcServer_Route_Client* client = RpcServer_Route::getRouteClinet(link_id);
+	if(client != NULL){
+		return client->Send(link_id, meta, body);
 	}
 
-	RPC_DEBUG_P("route_id is wrong. route id [%d]", route_id); 
 	return false;
 }
 
@@ -301,6 +297,15 @@ bool RpcServer_Route::RegisterService(const std::string& service_name, const std
 		ret &= route_client->RegisterService(service_name, service_addr);
 	}
 	return ret;
+}
+
+RpcServer_Route_Client* RpcServer_Route::getRouteClinet(LinkID link_id){
+	RouteID route_id = GetRouteID(link_id);
+	if(0 <= route_id && route_id < route_client_list_.size()){
+		return route_client_list_[route_id];
+	}
+	RPC_DEBUG_P("route_id is wrong. route id [%d]", route_id); 
+	return NULL;
 }
 
 } // namespace network

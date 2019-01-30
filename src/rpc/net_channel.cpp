@@ -47,7 +47,7 @@ bool RpcChannel_Route::Stop(){
 }
 
 bool RpcChannel_Route::Disconnect(LinkID link_id){
-	PushMessageToQueue(RpcPacketPtr(new RpcPacket(link_id, eNetEvent_Disconnection)));
+	PushMessageToQueue(RpcPacketPtr(new RpcPacket(link_id, eRpcEvent_Disconnection)));
 	return true;
 }
 
@@ -56,22 +56,10 @@ bool RpcChannel_Route::RegisterService(const std::string& service_name, const st
 	regiseter.set_service_name(service_name);
 	regiseter.set_service_addr(service_addr);
 
-	frrpc::route::RouteRequest route_request;
-	route_request.set_cmd(frrpc::route::eRouteCmd_Channel_ServiceRegister);
-	if(!regiseter.SerializeToString(route_request.mutable_request_binary())){
-		RPC_DEBUG_E("Fail to serialize service regiseter info."); return false;
+	if(net_client_->Send(BuildBinaryFromMessage(frrpc::route::eRouteCmd_Channel_ServiceRegister, regiseter)) != eNetSendResult_Ok){
+		RPC_DEBUG_E("Fail to send binary."); 
+		return false;
 	}
-
-	frrpc::network::NetInfo net_info;
-	net_info.set_net_type(eNetType_RouteCmd);
-	if(!route_request.SerializeToString(net_info.mutable_net_binary())){
-		RPC_DEBUG_E("Fail to serialize route net info."); return false;
-	}
-
-	if(net_client_->Send(BuildBinaryFromMessage(net_info)) != eNetSendResult_Ok){
-		RPC_DEBUG_E("Fail to send binary."); return false;
-	}
-
 	return true;
 }
 
@@ -104,7 +92,7 @@ bool RpcChannel_Route::OnReceive(Socket socket, const frpublic::BinaryMemory& bi
 		}
 
 		NetInfo net_info;
-		RpcPacketPtr packet(new RpcPacket(0, eNetEvent_Method));
+		RpcPacketPtr packet(new RpcPacket(0, eRpcEvent_Method));
 		if(packet != NULL){
 			if(!GetMessageFromBinary(binary, offset, net_info, packet)){
 				RPC_DEBUG_E("Error : GetMessageFromBinary."); return false;
@@ -128,9 +116,11 @@ bool RpcChannel_Route::OnReceive(Socket socket, const frpublic::BinaryMemory& bi
 }
 
 void RpcChannel_Route::OnConnect(Socket socket){
+	PushMessageToQueue(RpcPacketPtr(new RpcPacket(socket, eRpcEvent_Connection)));
 }
 
 void RpcChannel_Route::OnDisconnect(Socket socket){
+	PushMessageToQueue(RpcPacketPtr(new RpcPacket(socket, eRpcEvent_Disconnection)));
 }
 
 void RpcChannel_Route::OnClose(){

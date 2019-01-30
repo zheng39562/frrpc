@@ -69,11 +69,13 @@ class Server{
 
 		bool Stop();
 
+		bool Disconnect(LinkID link_id);
+
 		bool RunUntilQuit();
 
 		// Is you want receive network event. You need register a callback.
 		// Event does not include method of rpc.
-		inline void RegisterNetEvent(std::function<void(LinkID link_id, const network::eNetEvent& event)> net_event_cb){ net_event_cb_ = net_event_cb; }
+		inline void RegisterNetEvent(std::function<void(LinkID link_id, const frrpc::eRpcEvent& event)> net_event_cb){ net_event_cb_ = net_event_cb; }
 
 		bool SendRpcMessage(LinkID link_id, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
 		bool SendRpcMessage(std::vector<LinkID> link_ids, const std::string& service_name, const std::string& method_name, const ::google::protobuf::Message& response);
@@ -82,17 +84,18 @@ class Server{
 
 		bool InitThreads(ServerOption& option);
 		
-		void ReleaseRpcResource(Controller* cntl, RpcMessage* rpc_message);
+		void SendResponse(ServerController* cntl, RpcMessage* rpc_message);
 		
 		google::protobuf::Service* GetServiceFromName(const std::string& service_name);
 		bool ParseBinary(const frrpc::RpcPacketPtr& packet, RpcMessage& rpc_message, google::protobuf::Service** service);
 	private:
+		bool run_thread_;
 		frrpc::network::RpcNetServer* rpc_net_;
 		ServerOption option_;
 		std::map<std::string, ::google::protobuf::Service*> name_2service_;
 		std::vector<std::thread> work_threads_;
 		eCompressType compress_type_; 
-		std::function<void(LinkID link_id, const network::eNetEvent& event)> net_event_cb_;
+		std::function<void(LinkID link_id, const frrpc::eRpcEvent& event)> net_event_cb_;
 };
 
 }// namespace frrpc{

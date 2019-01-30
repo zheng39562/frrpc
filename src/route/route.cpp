@@ -18,25 +18,6 @@ using namespace frrpc::network;
 namespace frrpc{ 
 namespace route{ 
 
-std::string GetCommandName(eRouteCmd cmd){
-	switch(cmd){
-		case eRouteCmd_EventRegister : return "Command-Event-Register";
-		case eRouteCmd_EventCancel : return "Command-Event-Cancel";
-		case eRouteCmd_EventNotice : return "Command-Event-Notice";
-		case eRouteCmd_Server_ServiceRegister : return "eRouteCmd_Server_ServiceRegister";
-		case eRouteCmd_Server_ServiceCancel : return "eRouteCmd_Server_ServiceCancel";
-		case eRouteCmd_Channel_ServiceRegister : return "eRouteCmd_Channel_ServiceRegister";
-		default: return "Unkonw Command";
-	}
-}
-
-} // namepsace route
-} // namepsace frrpc
-
-
-namespace frrpc{ 
-namespace route{ 
-
 RouteServiceInfos::RouteServiceInfos(const std::string& service_name) 
 	:service_name_(service_name),
 	 sockets_(),
@@ -270,15 +251,18 @@ bool RpcRoute::RouteProcess(Socket socket, const frpublic::BinaryMemory& binary,
 }
 
 bool RpcRoute::CommandProcess(Socket socket, const frpublic::BinaryMemory& binary, int32_t offset, frrpc::network::NetInfo& net_info){
-	frrpc::route::RouteRequest route_request;
+	frrpc::route::RouteCmdRequest route_request;
 	if(route_request.ParseFromString(net_info.net_binary())){
-		DEBUG_P("Receive a route command: ", GetCommandName(route_request.cmd()).c_str());
+		DEBUG_P("Receive a route command: %s", eRouteCmd_Name(route_request.cmd()).c_str());
 		switch(route_request.cmd()){
+	/* zjm-wait
 			case eRouteCmd_EventRegister: return EventRegister(socket, route_request.request_binary());
 			case eRouteCmd_EventCancel: return EventCancel(socket, route_request.request_binary());
 			case eRouteCmd_EventNotice : DEBUG_W("Command-Event-Notice is not defined.");
+			*/
 			case eRouteCmd_Server_ServiceRegister: return ServerServiceRegister(socket, route_request.request_binary());
-			case eRouteCmd_Server_ServiceCancel: return ServerServiceCancel(socket);
+			case eRouteCmd_Server_ServiceCancel: return ServerServiceCancel(socket, route_request.request_binary());
+			case eRouteCmd_Server_DisconnectChannel: return ServerDisconnectChannelFunc(socket, route_request.request_binary());
 			case eRouteCmd_Channel_ServiceRegister: return ChannelServiceRegister(socket, route_request.request_binary());
 			default : DEBUG_E("Unkonw route command [%d]", route_request.cmd()); return false;
 		}
@@ -294,6 +278,7 @@ bool RpcRoute::HeartProcess(Socket socket, const frpublic::BinaryMemory& binary,
 	return net_server_->Send(socket, BinaryMemoryPtr(new BinaryMemory(binary.buffer(offset), size + sizeof(PacketSize)))) == eNetSendResult_Ok;
 }
 
+	/* zjm-wait
 bool RpcRoute::EventRegister(Socket socket, const std::string& binary){
 	EventNotice event_notice;
 	if(!event_notice.ParseFromString(binary)){
@@ -350,6 +335,7 @@ bool RpcRoute::EventNoticeDisconnect(Socket socket, const std::string& binary){
 	InsertOperator(event_dis_listen_2notice_, event_notice_disconnect.socket(), socket);
 	return true;
 }
+*/
 
 bool RpcRoute::ServerServiceRegister(Socket socket, const std::string& binary){
 	RouteServiceInfo route_service_info;
@@ -360,8 +346,25 @@ bool RpcRoute::ServerServiceRegister(Socket socket, const std::string& binary){
 	return AddService(socket, route_service_info.name(), route_service_info.addr());
 }
 
-bool RpcRoute::ServerServiceCancel(Socket socket){
+bool RpcRoute::ServerServiceCancel(Socket socket, const std::string& binary){
 	return DeleteService(socket);
+}
+
+bool RpcRoute::ServerDisconnectChannelFunc(Socket socket, const std::string& binary){
+	frrpc::route::ServerDisconnectChannel server_disconnect_channel;
+	if(!server_disconnect_channel.ParseFromString(binary)){
+		DEBUG_E("Fail to parse route service info. socket [%d]", socket); 
+		return false;
+	}
+
+	if(IsServiceSocket(socket)){
+		for(int index = 0; index < server_disconnect_channel.channel_socket_size(); ++index){
+			Socket disconnect_socket = server_disconnect_channel.channel_socket(index);
+			net_server_->Disconnect(disconnect_socket);
+		}
+		return true;
+	}
+	return false;
 }
 
 bool RpcRoute::ChannelServiceRegister(Socket socket, const std::string& binary){
@@ -423,6 +426,7 @@ bool RpcRoute::DeleteService(Socket service_socket){
 }
 
 bool RpcRoute::SendEventNotice_Disconnect(Socket disconnect_socket){
+	/* zjm-wait
 	frrpc::route::EventNotice_Disconnect notice_disconnect;
 	notice_disconnect.set_socket(disconnect_socket);
 
@@ -463,6 +467,8 @@ bool RpcRoute::SendEventNotice_Disconnect(Socket disconnect_socket){
 		}
 	}
 	return ret;
+	*/
+	return true;
 }
 
 BinaryMemoryPtr RpcRoute::BuildSendPacket(const frpublic::BinaryMemory& binary, int32_t offset, const frrpc::network::NetInfo& net_info){

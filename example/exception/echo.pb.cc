@@ -158,15 +158,11 @@ void AddDescriptorsImpl() {
   static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
       "\n\necho.proto\022\007example\"\007\n\005empty\"\026\n\007reques"
       "t\022\013\n\003msg\030\001 \001(\t\"\027\n\010response\022\013\n\003msg\030\001 \001(\t2"
-      "\332\001\n\013EchoService\022+\n\004Echo\022\020.example.reques"
-      "t\032\021.example.response\0223\n\014EchoRetError\022\020.e"
-      "xample.request\032\021.example.response\0221\n\014Reg"
-      "isterEcho\022\016.example.empty\032\021.example.resp"
-      "onse\0226\n\021RegisterClassEcho\022\016.example.empt"
-      "y\032\021.example.responseB\003\200\001\001b\006proto3"
+      ":\n\013EchoService\022+\n\004Echo\022\020.example.request"
+      "\032\021.example.responseB\003\200\001\001b\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 313);
+      descriptor, 152);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "echo.proto", &protobuf_RegisterTypes);
 }
@@ -911,30 +907,6 @@ void EchoService::Echo(::google::protobuf::RpcController* controller,
   done->Run();
 }
 
-void EchoService::EchoRetError(::google::protobuf::RpcController* controller,
-                         const ::example::request*,
-                         ::example::response*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method EchoRetError() not implemented.");
-  done->Run();
-}
-
-void EchoService::RegisterEcho(::google::protobuf::RpcController* controller,
-                         const ::example::empty*,
-                         ::example::response*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method RegisterEcho() not implemented.");
-  done->Run();
-}
-
-void EchoService::RegisterClassEcho(::google::protobuf::RpcController* controller,
-                         const ::example::empty*,
-                         ::example::response*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method RegisterClassEcho() not implemented.");
-  done->Run();
-}
-
 void EchoService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
                              ::google::protobuf::RpcController* controller,
                              const ::google::protobuf::Message* request,
@@ -945,24 +917,6 @@ void EchoService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
     case 0:
       Echo(controller,
              ::google::protobuf::down_cast<const ::example::request*>(request),
-             ::google::protobuf::down_cast< ::example::response*>(response),
-             done);
-      break;
-    case 1:
-      EchoRetError(controller,
-             ::google::protobuf::down_cast<const ::example::request*>(request),
-             ::google::protobuf::down_cast< ::example::response*>(response),
-             done);
-      break;
-    case 2:
-      RegisterEcho(controller,
-             ::google::protobuf::down_cast<const ::example::empty*>(request),
-             ::google::protobuf::down_cast< ::example::response*>(response),
-             done);
-      break;
-    case 3:
-      RegisterClassEcho(controller,
-             ::google::protobuf::down_cast<const ::example::empty*>(request),
              ::google::protobuf::down_cast< ::example::response*>(response),
              done);
       break;
@@ -978,12 +932,6 @@ const ::google::protobuf::Message& EchoService::GetRequestPrototype(
   switch(method->index()) {
     case 0:
       return ::example::request::default_instance();
-    case 1:
-      return ::example::request::default_instance();
-    case 2:
-      return ::example::empty::default_instance();
-    case 3:
-      return ::example::empty::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
       return *::google::protobuf::MessageFactory::generated_factory()
@@ -996,12 +944,6 @@ const ::google::protobuf::Message& EchoService::GetResponsePrototype(
   GOOGLE_DCHECK_EQ(method->service(), descriptor());
   switch(method->index()) {
     case 0:
-      return ::example::response::default_instance();
-    case 1:
-      return ::example::response::default_instance();
-    case 2:
-      return ::example::response::default_instance();
-    case 3:
       return ::example::response::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -1026,27 +968,6 @@ void EchoService_Stub::Echo(::google::protobuf::RpcController* controller,
                               ::example::response* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0),
-                       controller, request, response, done);
-}
-void EchoService_Stub::EchoRetError(::google::protobuf::RpcController* controller,
-                              const ::example::request* request,
-                              ::example::response* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(1),
-                       controller, request, response, done);
-}
-void EchoService_Stub::RegisterEcho(::google::protobuf::RpcController* controller,
-                              const ::example::empty* request,
-                              ::example::response* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(2),
-                       controller, request, response, done);
-}
-void EchoService_Stub::RegisterClassEcho(::google::protobuf::RpcController* controller,
-                              const ::example::empty* request,
-                              ::example::response* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(3),
                        controller, request, response, done);
 }
 
