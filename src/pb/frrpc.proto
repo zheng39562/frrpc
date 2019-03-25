@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package frrpc;
+
+// 压缩是不是放到net内更合理?
+enum eCompressType{
+	eCompressType_Not = 0;
+}
+
+enum eRpcEvent{
+	eRpcEvent_Tmp = 0;
+	eRpcEvent_Method = 1;
+	eRpcEvent_Connection = 2;
+	eRpcEvent_Disconnection = 3;
+}
+
+// 命名忘记了，先用参数名.
+message RpcRequestMeta{
+	uint64 request_id = 1;
+}
+
+// 命名忘记了，先用参数名.
+message RpcResponseMeta{
+	string error = 1;
+	bool failed = 2;
+}
+
+message RpcMeta{
+	string service_name = 1;
+	int32 method_index = 2;
+	RpcRequestMeta rpc_request_meta = 3;
+	RpcResponseMeta rpc_response_meta = 4;
+	eCompressType compress_type = 5;
+}
+

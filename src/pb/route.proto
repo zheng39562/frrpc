@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package frrpc.route;
+
+enum eRouteCmd{
+	eRouteCmd_Tmp = 0;
+
+	eRouteCmd_Channel_ServiceRegister = 1;
+	eRouteCmd_Server_DisconnectChannel = 2;
+	eRouteCmd_Server_ServiceRegister = 3;
+	eRouteCmd_Server_ServiceCancel = 4;
+}
+
+message RouteNetInfo{
+	bool is_channel_packet = 1;
+	string service_name = 2;
+	repeated int32 target_sockets = 3;
+	int32 source_socket = 4;
+}
+
+message RouteCmdRequest{
+	eRouteCmd cmd = 1;
+	bytes request_binary = 2;
+}
+
+message RouteCmdResponse{
+	eRouteCmd cmd = 1;
+}
+
+message ChannelServiceRegister{
+	string service_name = 1;
+	string service_addr = 2;
+}
+
+message ServerDisconnectChannel{
+	repeated int32 channel_socket = 1;
+}
+
+message RouteServiceInfo{
+	string name = 1;
+	string addr = 2;
+}
+
+enum eRouteNotifyType{
+	eRouteNotifyType_Tmp = 0;
+	eRouteNotifyType_Disconnect = 1;
+}
+
+
+message RouteNotify{
+	eRouteNotifyType type = 1;
+	bytes data = 2;
+}
+
+message NotifyType_Disconnect{
+	int32 socket = 1;
+}
+

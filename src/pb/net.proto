@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package frrpc.network;
+
+enum eNetType{
+	eNetType_Tmp = 0;
+
+	eNetType_Special = 0xEF;
+	eNetType_RouteCmd = 0xF1;
+	eNetType_Heart = 0xF2;
+	eNetType_Route = 0xF3;
+	eNetType_RouteNotify = 0xF4;
+}
+
+message NetInfo{
+	eNetType net_type = 1;
+	bytes net_binary = 2;
+}
+
+
+
