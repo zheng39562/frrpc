@@ -1,6 +1,6 @@
 set breakpoint pending on
 
-b frnet::NetClient_Epoll::ReadProcess
+break net_server.cpp:111
 
-run Gate 127.0.0.1 12345
+run "127.0.0.1" 12345 addr1
 

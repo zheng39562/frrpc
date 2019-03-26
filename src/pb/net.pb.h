@@ -69,10 +69,10 @@ namespace network {
 
 enum eNetType {
   eNetType_Tmp = 0,
+  eNetType_Route = 1,
   eNetType_Special = 239,
   eNetType_RouteCmd = 241,
   eNetType_Heart = 242,
-  eNetType_Route = 243,
   eNetType_RouteNotify = 244,
   eNetType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   eNetType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()

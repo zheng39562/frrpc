@@ -16,8 +16,6 @@
 using namespace std;
 using namespace frpublic;
 
-// Exit function list. {{{1
-
 void AskToQuit();
 
 void SignalHandle(int sign){

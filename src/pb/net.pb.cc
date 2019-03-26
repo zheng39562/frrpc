@@ -72,16 +72,16 @@ static ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptorsTable assign_descript
 const char descriptor_table_protodef_net_2eproto[] =
   "\n\tnet.proto\022\rfrrpc.network\"H\n\007NetInfo\022)\n"
   "\010net_type\030\001 \001(\0162\027.frrpc.network.eNetType"
-  "\022\022\n\nnet_binary\030\002 \001(\014*\220\001\n\010eNetType\022\020\n\014eNe"
-  "tType_Tmp\020\000\022\025\n\020eNetType_Special\020\357\001\022\026\n\021eN"
-  "etType_RouteCmd\020\361\001\022\023\n\016eNetType_Heart\020\362\001\022"
-  "\023\n\016eNetType_Route\020\363\001\022\031\n\024eNetType_RouteNo"
-  "tify\020\364\001b\006proto3"
+  "\022\022\n\nnet_binary\030\002 \001(\014*\217\001\n\010eNetType\022\020\n\014eNe"
+  "tType_Tmp\020\000\022\022\n\016eNetType_Route\020\001\022\025\n\020eNetT"
+  "ype_Special\020\357\001\022\026\n\021eNetType_RouteCmd\020\361\001\022\023"
+  "\n\016eNetType_Heart\020\362\001\022\031\n\024eNetType_RouteNot"
+  "ify\020\364\001b\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_net_2eproto = {
   false, InitDefaults_net_2eproto, 
   descriptor_table_protodef_net_2eproto,
-  "net.proto", &assign_descriptors_table_net_2eproto, 255,
+  "net.proto", &assign_descriptors_table_net_2eproto, 254,
 };
 
 void AddDescriptors_net_2eproto() {
@@ -102,10 +102,10 @@ const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* eNetType_descriptor() {
 bool eNetType_IsValid(int value) {
   switch (value) {
     case 0:
+    case 1:
     case 239:
     case 241:
     case 242:
-    case 243:
     case 244:
       return true;
     default:
